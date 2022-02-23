@@ -15,11 +15,11 @@ class SeatingArrangement:
     // mutating here, at the flight-seating-arrangement level (as opposed to at the individual seat level) because the
     // whole collection of booking seat selections is an all-or- nothing.
     // mutating at all because of "persisting" otherwise-dynamic flightNumber-to-flight map
-    for
+    (for
       arrangementRef <- TRef.make(arrangement)
       _              <- processSeats(seats, arrangementRef)
       withAddedSeats <- arrangementRef.get
-    yield arrangement = withAddedSeats
+    yield arrangement = withAddedSeats).commit
 
 object SeatingArrangement:
   private def processSeats(seats: Set[SeatAssignment], arrangementRef: TRef[OptionsMatrix[String]]) =
