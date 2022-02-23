@@ -1,6 +1,7 @@
 package io.scalac.zioairlines.models
 
 import zio.*
+import zio.stm.TRef
 
 import io.scalac.zioairlines.exceptions.*
 import io.scalac.zioairlines.adts.IncrementingKeyMap
@@ -50,17 +51,17 @@ object Booking:
   private val CancellationDelay = 5.minutes
 
   def beginBooking(flightNumber: String): IO[FlightDoesNotExist, BookingNumber] =
-    Flight.fromFlightNumber(flightNumber).fold(new FlightDoesNotExist(flightNumber)) { flight =>
+    Flight.fromFlightNumber(flightNumber).fold(IO.fail(new FlightDoesNotExist(flightNumber))) { flight =>
       for
-        bookingsRef         <- Ref.make(bookings)
-        bookingNumber       <- bookingsRef.map(_.nextKey)
+        bookingsRef         <- TRef.make(bookings)
+        bookingNumber       <- bookingsRef.get.map(_.nextKey)
         delayedCancellation  = (URIO.sleep(CancellationDelay) *> cancelBooking(flight, bookingNumber)).fork
         _                   <- bookingsRef.update(_.add(Booking(flight, bookingNumber, delayedCancellation)))
         updatedBookings     <- bookingsRef
       yield {
         bookings = updatedBookings
         bookingNumber
-      }
+      }.commit
     }
 
   def selectSeats(
