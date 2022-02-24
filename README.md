@@ -15,11 +15,11 @@ as an aid in learning some of the more salient aspects of ZIO.
 - One flight per booking (1 or more seats).
 - There are 40 seats per airplane.
 - Booking will consist of the following stages: 
-  1. flight selection
-  2. seat selection/assignment from available seats (since there is no guarantee that the seat selections input by 
-client are not stale, there is the possibility that a subset of the seats have been occupied by another client. In said case, the
-error channel should wholly indicate which of the seats are no longer available)
-  3. confirm booking
+  1. **flight selection**
+  2. **seat selection/assignment** from available seats (since there is no guarantee that the seat selections input by 
+client are not stale, there is the possibility that a subset of the seats have been occupied by another client. In said 
+case, the error channel should wholly indicate which of the seats are no longer available)
+  3. **confirm booking**
 - Once started, a booking will have 5 minutes for completion. If not completed within said time, booking will be 
 invalidated and the seats therein become eligible for booking by any user.
 - A booking can be cancelled at any time before the actual flight (only the reservation number is required if booking
