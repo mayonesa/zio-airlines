@@ -59,16 +59,13 @@ object Booking:
   def selectSeats(
     bookingNumber: BookingNumber,
     seats: Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
-  ): IO[BookingTimeExpired & BookingDoesNotExist, Unit] = ???
+  ): IO[BookingTimeExpired | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
+    get(bookingNumber).flatMap(_.assignSeats(seats)).commit
 
   def book(
     bookingNumber: BookingNumber
-  ): ZIO[Clock, BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
-    (for
-      bookings <- bookingsRef
-      booking  <- bookings.get(bookingNumber)
-      _        <- booking.book
-    yield ()).commit
+  ): IO[BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
+    get(bookingNumber).flatMap(_.book).commit
 
   def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingAlreadyCanceled] =
     bookingsRef.flatMap(_.get(bookingNumber).foldSTM({
@@ -76,3 +73,9 @@ object Booking:
         case _   : BookingTimeExpired  => STM.succeed(true)
         case bdne: BookingDoesNotExist => STM.fail(bdne)
     }, _.cancel *> STM.succeed(false))).commit
+
+  private def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist | BookingTimeExpired, Booking] =
+    for
+      bookings <- bookingsRef
+      booking  <- bookings.get(bookingNumber)
+    yield booking
