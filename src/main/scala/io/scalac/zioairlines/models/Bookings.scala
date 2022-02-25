@@ -4,7 +4,7 @@ import io.scalac.zioairlines.adts.IncrementingKeyMap
 import io.scalac.zioairlines.exceptions.{BookingDoesNotExist, BookingTimeExpired}
 
 import zio.URIO
-import zio.stm.{STM, USTM, TRef, ZSTM}
+import zio.stm.{STM, USTM, TRef}
 
 private class Bookings(ref: TRef[IncrementingKeyMap[Booking]]):
   private[models] def add(flight: Flight): USTM[BookingNumber] =

@@ -4,8 +4,7 @@ import zio.*
 import zio.stm.{STM, USTM, TRef}
 
 import io.scalac.zioairlines.exceptions.*
-import io.scalac.zioairlines.adts.IncrementingKeyMap
-import io.scalac.zioairlines.models.Booking.*
+import io.scalac.zioairlines.models.Booking.bookingsRef
 
 type BookingNumber = Int
 val CancellationDelay = 5.minutes
