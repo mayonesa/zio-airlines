@@ -19,7 +19,7 @@ class OptionsMatrix[A] private (matrix: Vector[Vector[Option[A]]], nDefineds: In
       j           <- column.indices
     yield (i, j)).toSet
 
-  def atCapacity: Boolean = nDefineds == matrix.size * matrix(0).size
+  def atCapacity: Boolean = nDefineds == matrix.size * matrix.head.size
 
 object OptionsMatrix:
   def empty[A](nRows: Int, nCols: Int): OptionsMatrix[A] =
