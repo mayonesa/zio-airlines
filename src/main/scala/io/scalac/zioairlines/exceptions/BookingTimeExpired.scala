@@ -1,7 +1,5 @@
 package io.scalac.zioairlines.exceptions
 
-import zio.Duration
+import io.scalac.zioairlines.models.CancellationDelay
 
-class BookingTimeExpired(timeLimit: Duration) extends ZioAirlinesException(
-  s"time limit (${timeLimit.toString}) expired"
-)
+class BookingTimeExpired extends ZioAirlinesException(s"time limit ($CancellationDelay) expired")

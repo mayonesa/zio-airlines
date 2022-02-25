@@ -1,95 +1,79 @@
 package io.scalac.zioairlines.models
 
 import zio.*
-import zio.stm.TRef
+import zio.stm.{STM, USTM, TRef}
 
 import io.scalac.zioairlines.exceptions.*
 import io.scalac.zioairlines.adts.IncrementingKeyMap
 import io.scalac.zioairlines.models.Booking.*
 
-private class Booking(
+type BookingNumber = Int
+val CancellationDelay = 5.minutes
+
+private[models] case class Booking(
   flight: Flight,
-  val bookingNumber: BookingNumber,
-  delayedCancellation: UIO[Fiber.Runtime[Nothing, Unit]],
-  canceled: BookingAlreadyCanceled = false,
+  bookingNumber: BookingNumber,
+  delayedCancellation: URIO[Clock, Fiber.Runtime[Nothing, Unit]],
+  canceled: Boolean = false,
   seatAssignments: Set[SeatAssignment] = Set()
 ):
   private def assignSeats(
     seatSelections: Set[SeatAssignment]
-  ): IO[SeatsNotAvailable | BookingTimeExpired | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
+  ): STM[SeatsNotAvailable | BookingTimeExpired | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
     if canceled then
-      IO.fail(new BookingTimeExpired(CancellationDelay))
+      STM.fail(new BookingTimeExpired)
     else if seatAssignments.nonEmpty then
-      IO.fail(new BookingStepOutOfOrder("You cannot add seats more than once to a booking"))
+      STM.fail(new BookingStepOutOfOrder("You cannot add seats more than once to a booking"))
     else if seatSelections.isEmpty then
-      IO.fail(new NoSeatsSelected)
+      STM.fail(new NoSeatsSelected)
     else
-      flight.assignSeats(seatSelections).map { _ =>
-        delayedCancellation.flatMap(_.interrupt) *>
-          updateBookings(Booking(flight, bookingNumber, delayedCancellation, seatAssignments = seatSelections))
-      }
+      flight.assignSeats(seatSelections) *> TRef.make(delayedCancellation.flatMap(_.interrupt)) *>
+        bookingsRef.flatMap(_.update(copy(seatAssignments = seatSelections)))
 
-  private def book: IO[BookingTimeExpired | BookingStepOutOfOrder, Unit] =
+  private def book: STM[BookingTimeExpired | BookingStepOutOfOrder, Unit] =
     if seatAssignments.isEmpty then
-      IO.fail(new BookingStepOutOfOrder("Must assign seats beforehand"))
+      STM.fail(BookingStepOutOfOrder("Must assign seats beforehand"))
     else if canceled then
-      IO.fail(new BookingTimeExpired(CancellationDelay))
+      STM.fail(new BookingTimeExpired)
     else
-      delayedCancellation.flatMap(_.interrupt) *>
-        updateBookings(Booking(flight, bookingNumber, UIO.never, seatAssignments = seatAssignments))
+      TRef.make(delayedCancellation.flatMap(_.interrupt)) *>
+        bookingsRef.flatMap(_.update(copy(delayedCancellation = UIO.never)))
 
-  private def cancel: UIO[Unit] =
+  private def cancel: USTM[Unit] =
     delayedCancellation.flatMap(_.interrupt)
-    cancelBooking(flight, bookingNumber)
+    bookingsRef.flatMap(_.cancel(flight, bookingNumber))
 
 object Booking:
-  type BookingNumber = Int
   type BookingAlreadyCanceled = Boolean
-  private type Bookings = IncrementingKeyMap[Booking]
 
-  private var bookings = IncrementingKeyMap.empty[Booking]
-  private val CancellationDelay = 5.minutes
+  private val bookingsRef = Bookings.empty
 
   def beginBooking(flightNumber: String): IO[FlightDoesNotExist, BookingNumber] =
-    Flight.fromFlightNumber(flightNumber).fold(IO.fail(new FlightDoesNotExist(flightNumber))) { flight =>
-      for
-        bookingsRef         <- TRef.make(bookings)
-        bookingNumber       <- bookingsRef.get.map(_.nextKey)
-        delayedCancellation  = (URIO.sleep(CancellationDelay) *> cancelBooking(flight, bookingNumber)).fork
-        _                   <- bookingsRef.update(_.add(Booking(flight, bookingNumber, delayedCancellation)))
-        updatedBookings     <- bookingsRef
-      yield {
-        bookings = updatedBookings
-        bookingNumber
-      }.commit
-    }
+    (for
+      flightOptRef  <- TRef.make(Flight.fromFlightNumber(flightNumber))
+      flightOpt     <- flightOptRef.get
+      bookingNumber <- flightOpt.fold(STM.fail(FlightDoesNotExist(flightNumber))) { flight =>
+        bookingsRef.flatMap(_.add(flight))
+      }
+    yield bookingNumber).commit
 
   def selectSeats(
     bookingNumber: BookingNumber,
-    seats: Set[SeatAssignment]
+    seats: Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
   ): IO[BookingTimeExpired & BookingDoesNotExist, Unit] = ???
 
-  def book(bookingNumber: BookingNumber): IO[BookingTimeExpired & BookingDoesNotExist, Unit] =
-    getBooking(bookingNumber, IO.fail(new BookingTimeExpired(CancellationDelay))).flatMap(_.book)
+  def book(
+    bookingNumber: BookingNumber
+  ): ZIO[Clock, BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
+    (for
+      bookings <- bookingsRef
+      booking  <- bookings.get(bookingNumber)
+      _        <- booking.book
+    yield ()).commit
 
-  def cancelBooking(bookingNumber: BookingNumber) =
-    getBooking(bookingNumber, IO.succeed(true)).flatMap(_.cancel)
-
-  private def cancelBooking(flight: Flight, bookingNumber: BookingNumber) =
-    updateBookings(_.updated(bookingNumber, Booking(flight, bookingNumber, UIO.never)))
-
-  private def updateBookings(booking: Booking): UIO[Unit] =
-    for
-      bookingsRef     <- Ref.make(bookings)
-      _               <- bookingsRef.update(_.updated(booking.bookingNumber))
-      updatedBookings <- bookingsRef
-    yield bookings = updatedBookings
-
-  private def getBooking(bookingNumber: BookingNumber, ifCanceled: => IO[Any, Booking]) =
-//    for
-//      reservationRef <- TRef.make(bookings)
-    bookings.get(bookingNumber).fold(IO.fail(new BookingDoesNotExist)) { booking =>
-      if booking.canceled
-      then ifCanceled
-      else IO.succeed(booking)
-    }
+  def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingAlreadyCanceled] =
+    bookingsRef.flatMap(_.get(bookingNumber).foldSTM({
+      _ match
+        case _   : BookingTimeExpired  => STM.succeed(true)
+        case bdne: BookingDoesNotExist => STM.fail(bdne)
+    }, _.cancel *> STM.succeed(false))).commit

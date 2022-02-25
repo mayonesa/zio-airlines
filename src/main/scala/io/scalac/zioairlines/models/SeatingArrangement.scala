@@ -1,28 +1,13 @@
 package io.scalac.zioairlines.models
 
 import zio.NonEmptyChunk
-import zio.stm.{STM, TRef}
+import zio.stm.{STM, USTM, TRef}
 
 import io.scalac.zioairlines.exceptions.SeatsNotAvailable
 import io.scalac.zioairlines.adts.OptionsMatrix
 
-import SeatingArrangement.processSeats
-
-class SeatingArrangement:
-  private var arrangement = OptionsMatrix.empty[String](SeatRow.values.length, SeatLetter.values.length)
-
-  private[models] def assignSeats(seats: Set[SeatAssignment]) =
-    // mutating here, at the flight-seating-arrangement level (as opposed to at the individual seat level) because the
-    // whole collection of booking seat selections is an all-or- nothing.
-    // mutating at all because of "persisting" otherwise-dynamic flightNumber-to-flight map
-    (for
-      arrangementRef <- TRef.make(arrangement)
-      _              <- processSeats(seats, arrangementRef)
-      withAddedSeats <- arrangementRef.get
-    yield arrangement = withAddedSeats).commit
-
-object SeatingArrangement:
-  private def processSeats(seats: Set[SeatAssignment], arrangementRef: TRef[OptionsMatrix[String]]) =
+class SeatingArrangement private (ref: TRef[OptionsMatrix[String]]):
+  private[models] def assignSeats(seats: Set[SeatAssignment]): STM[SeatsNotAvailable, Unit] =
     def loop(restOfSeats: Set[SeatAssignment], invalidSeats: Set[Seat]): STM[SeatsNotAvailable, Unit] =
       restOfSeats.headOption.fold(
         if invalidSeats.nonEmpty
@@ -30,17 +15,17 @@ object SeatingArrangement:
         else STM.succeed(())
       ) { seatIntent =>
         val seat = seatIntent.seat
-        val i = seat.row.i
-        val j = seat.seat.j
+        val i = seat.row.ordinal
+        val j = seat.seat.ordinal
         val tail = restOfSeats.tail
 
-        arrangementRef.get.flatMap { arrangement =>
+        ref.get.flatMap { arrangement =>
           if arrangement.isEmpty(i, j) then
 
             // calculate new arrangement and set only if not a lost cause already
             if invalidSeats.isEmpty then
               val updatedArrangement = arrangement.set(i, j)(seatIntent.passengerName)
-              arrangementRef.set(updatedArrangement)
+              ref.set(updatedArrangement)
 
             loop(tail, invalidSeats)
           else
@@ -49,3 +34,11 @@ object SeatingArrangement:
       }
 
     loop(seats, Set())
+
+  private[models] def availableSeats: USTM[Set[Seat]] = ref.get.map(_.empties.map { (i, j) =>
+    Seat(SeatRow.fromOrdinal(i), SeatLetter.fromOrdinal(j))
+  })
+
+object SeatingArrangement:
+  def empty: USTM[SeatingArrangement] =
+    TRef.make(OptionsMatrix.empty[String](SeatRow.values.length, SeatLetter.values.length)).map(SeatingArrangement(_))
