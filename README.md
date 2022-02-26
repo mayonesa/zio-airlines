@@ -28,7 +28,7 @@ already completed).
 - Insure integrity in a concurrent-booking context but a whole flight should not be "locked" throughout the entirety of
 an ongoing same-flight booking process (i.e., flight selection, seat selection, and confirmation).
 
-### Part 2: Flight
+### Part 2: Flight (Under construction)
 The year is 2027. ZIO Airlines only serves markets it has exclusive rights to and has also embraced an adhoc flight-
 operations model. Therefore, 
 - Once a flight is full and a plane is ready, the flight will be queued up for departure. Additionally,
@@ -45,7 +45,7 @@ operations model. Therefore,
   - MEX
 - Airplanes have an average speed of 1000 Km/h regardless of distance.
 
-### Part 3: Emergency!
+### Part 3: Emergency! (Under construction)
 Unfortunately, emergencies are part and parcel of this industry and ZIO Airlines is no exception but, at the 
 prodding of the associated government-powers-that-be, some mitigating procedures have been put in place:
 - Every airplane of its fleet must send ZIO Central an "I'm-flying" signal (only when it actually is) every 10 seconds 
