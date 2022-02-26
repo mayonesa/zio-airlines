@@ -5,5 +5,5 @@ import io.scalac.zioairlines.models.Seat
 import zio.NonEmptyChunk
 
 class SeatsNotAvailable(notAvailables: NonEmptyChunk[Seat]) extends ZioAirlinesException(
-  notAvailables.toCons.mkString(", ") + " pre-occupied"
+  notAvailables.toCons.mkString(", ") + " not available"
 )
