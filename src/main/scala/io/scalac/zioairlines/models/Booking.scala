@@ -26,8 +26,7 @@ private[models] case class Booking(
     else if seatSelections.isEmpty then
       STM.fail(new NoSeatsSelected)
     else
-      flight.assignSeats(seatSelections) *> TRef.make(delayedCancellation.flatMap(_.interrupt)) *>
-        bookingsRef.flatMap(_.update(copy(seatAssignments = seatSelections)))
+      flight.assignSeats(seatSelections) *> bookingsRef.flatMap(_.update(copy(seatAssignments = seatSelections)))
 
   private def book: STM[BookingTimeExpired | BookingStepOutOfOrder, Unit] =
     if seatAssignments.isEmpty then
@@ -35,12 +34,11 @@ private[models] case class Booking(
     else if canceled then
       STM.fail(new BookingTimeExpired)
     else
-      TRef.make(delayedCancellation.flatMap(_.interrupt)) *>
-        bookingsRef.flatMap(_.update(copy(delayedCancellation = UIO.never)))
+      cancelCancel *> bookingsRef.flatMap(_.update(copy(delayedCancellation = UIO.never)))
 
-  private def cancel: USTM[Unit] =
-    delayedCancellation.flatMap(_.interrupt)
-    bookingsRef.flatMap(_.cancel(flight, bookingNumber))
+  private def cancel: USTM[Unit] = cancelCancel *> bookingsRef.flatMap(_.cancel(flight, bookingNumber))
+
+  private def cancelCancel = TRef.make(delayedCancellation.flatMap(_.interrupt))
 
 object Booking:
   type BookingAlreadyCanceled = Boolean
