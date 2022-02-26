@@ -9,7 +9,7 @@ import io.scalac.zioairlines.models.Booking.bookingsRef
 type BookingNumber = Int
 val CancellationDelay = 5.minutes
 
-private[models] case class Booking(
+private case class Booking(
   flight: Flight,
   bookingNumber: BookingNumber,
   delayedCancellation: URIO[Clock, Fiber.Runtime[Nothing, Unit]],
