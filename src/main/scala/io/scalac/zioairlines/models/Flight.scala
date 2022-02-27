@@ -1,16 +1,21 @@
 package io.scalac.zioairlines.models
 
-import io.scalac.zioairlines.exceptions.{FlightDoesNotExist, SeatsNotAvailable}
+import io.scalac.zioairlines.exceptions.{FlightDoesNotExist, SeatsNotAvailable, ZioAirlinesException}
 import zio.IO
 import zio.stm.{STM, USTM}
 
 class Flight(val flightNumber: String):
   private val seatingArrangement = SeatingArrangement.empty
 
-  def availableSeats: USTM[Set[Seat]] = seatingArrangement.flatMap(_.availableSeats)
+  def availableSeats: USTM[Set[Seat]] = onSeatingArrangement(_.availableSeats)
 
   private[models] def assignSeats(seats: Set[SeatAssignment]): STM[SeatsNotAvailable, Unit] =
-    seatingArrangement.flatMap(_.assignSeats(seats))
+    onSeatingArrangement(_.assignSeats(seats))
+
+  private[models] def releaseSeats(seats: Set[SeatAssignment]): STM[SeatsNotAvailable, Unit] =
+    onSeatingArrangement(_.releaseSeats(seats))
+
+  private def onSeatingArrangement[E, A](f: SeatingArrangement => STM[E, A]) = seatingArrangement.flatMap(f)
 
 object Flight:
   val flights: Seq[Flight] = flightNumbers.map(Flight(_))
