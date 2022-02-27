@@ -10,16 +10,14 @@ private class Bookings(ref: TRef[IncrementingKeyMap[Booking]]):
   private[models] def add(flight: Flight): USTM[BookingNumber] =
     ref.update { bookings0 =>
       val bookingNumber = bookings0.nextKey
-      val delayedCancellation = cancel(flight, bookingNumber).commit.delay(CancellationDelay).fork
-      bookings0.add(Booking(flight, bookingNumber, delayedCancellation))
+      val potentialCancellation = cancel(flight, bookingNumber).commit.delay(CancellationDelay).fork
+      bookings0.add(Booking(flight, bookingNumber, potentialCancellation))
     } *> ref.get.map(_.nextKey)
 
-  private[models] def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist | BookingTimeExpired, Booking] =
-    ref.get.flatMap(_.get(bookingNumber).fold(STM.fail(new BookingDoesNotExist(bookingNumber))) { booking =>
-      if booking.canceled
-      then STM.fail(new BookingTimeExpired)
-      else STM.succeed(booking)
-    })
+  private[models] def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist, Booking] =
+    ref.get.flatMap { bookings =>
+      STM.fromEither(bookings.get(bookingNumber).toRight(new BookingDoesNotExist(bookingNumber)))
+    }
 
   private[models] def update(booking: Booking): USTM[Unit] = ref.update(_.updated(booking.bookingNumber, booking))
 

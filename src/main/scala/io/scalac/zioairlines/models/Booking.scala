@@ -10,11 +10,11 @@ type BookingNumber = Int
 val CancellationDelay = 5.minutes
 
 private case class Booking(
-  flight: Flight,
-  bookingNumber: BookingNumber,
-  delayedCancellation: URIO[Clock, Fiber.Runtime[Nothing, Unit]],
-  canceled: Boolean = false,
-  seatAssignments: Set[SeatAssignment] = Set()
+  flight               : Flight,
+  bookingNumber        : BookingNumber,
+  potentialCancellation: URIO[Clock, Fiber.Runtime[Nothing, Unit]],
+  canceled             : Boolean = false,
+  seatAssignments      : Set[SeatAssignment] = Set()
 ):
   private def assignSeats(
     seatSelections: Set[SeatAssignment]
@@ -34,18 +34,16 @@ private case class Booking(
     else if canceled then
       STM.fail(new BookingTimeExpired)
     else
-      cancelCancel *> bookingsRef.flatMap(_.update(copy(delayedCancellation = UIO.never)))
+      cancelPotentialCancel *> bookingsRef.flatMap(_.update(copy(potentialCancellation = UIO.never)))
 
   private def cancel: USTM[Unit] =
-    cancelCancel *>
+    cancelPotentialCancel *>
       (if seatAssignments.nonEmpty then flight.releaseSeats(seatAssignments) else STM.unit) *>
       bookingsRef.flatMap(_.cancel(flight, bookingNumber))
 
-  private def cancelCancel = TRef.make(delayedCancellation.flatMap(_.interrupt))
+  private def cancelPotentialCancel = TRef.make(potentialCancellation.flatMap(_.interrupt))
 
 object Booking:
-  type BookingAlreadyCanceled = Boolean
-
   private val bookingsRef = Bookings.empty
 
   def beginBooking(flightNumber: String): IO[FlightDoesNotExist, BookingNumber] =
@@ -61,23 +59,24 @@ object Booking:
     bookingNumber: BookingNumber,
     seats: Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
   ): IO[BookingTimeExpired | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
-    get(bookingNumber, _.assignSeats(seats))
+    call(bookingNumber, _.assignSeats(seats))
 
   def book(
     bookingNumber: BookingNumber
   ): IO[BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
-    get(bookingNumber, _.book)
+    call(bookingNumber, _.book)
 
-  def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist | SeatsNotAvailable, BookingAlreadyCanceled] =
-    bookingsRef.flatMap(_.get(bookingNumber).foldSTM({
-      _ match
-        case _   : BookingTimeExpired  => STM.succeed(true)
-        case bdne: BookingDoesNotExist => STM.fail(bdne)
-    }, _.cancel *> STM.succeed(false))).commit
+  def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingCancellationResult] =
+    call(bookingNumber, { booking =>
+      if booking.canceled then
+        STM.succeed(BookingCancellationResult.CanceledBeforehand)
+      else
+        booking.cancel *> STM.succeed(BookingCancellationResult.Done)
+    })
 
-  private def get[E](bookingNumber: BookingNumber, f: Booking => STM[E, Unit]) =
+  private def call[E, A](bookingNumber: BookingNumber, f: Booking => STM[E, A]) =
     ((for
       bookings <- bookingsRef
       booking  <- bookings.get(bookingNumber)
-      _        <- f(booking)
-    yield ()): STM[E | BookingDoesNotExist | BookingTimeExpired, Unit]).commit
+      a        <- f(booking)
+    yield a): STM[E | BookingDoesNotExist, A]).commit
