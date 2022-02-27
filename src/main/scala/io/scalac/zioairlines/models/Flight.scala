@@ -12,7 +12,7 @@ class Flight(val flightNumber: String):
   private[models] def assignSeats(seats: Set[SeatAssignment]): STM[SeatsNotAvailable, Unit] =
     onSeatingArrangement(_.assignSeats(seats))
 
-  private[models] def releaseSeats(seats: Set[SeatAssignment]): STM[SeatsNotAvailable, Unit] =
+  private[models] def releaseSeats(seats: Set[SeatAssignment]): USTM[Unit] =
     onSeatingArrangement(_.releaseSeats(seats))
 
   private def onSeatingArrangement[E, A](f: SeatingArrangement => STM[E, A]) = seatingArrangement.flatMap(f)

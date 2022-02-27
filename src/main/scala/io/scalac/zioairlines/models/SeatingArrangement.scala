@@ -35,7 +35,8 @@ class SeatingArrangement private (ref: TRef[OptionsMatrix[String]]):
 
     loop(seats, Set())
 
-  private[models] def releaseSeats(seats: Set[SeatAssignment]): STM[SeatsNotAvailable, Unit] = ???
+  private[models] def releaseSeats(seats: Set[SeatAssignment]): USTM[Unit] = ???
+    // TODO: assert all `seats` are occupied
 
   private[models] def availableSeats: USTM[Set[Seat]] = ref.get.map(_.empties.map { (i, j) =>
     Seat(SeatRow.fromOrdinal(i), SeatLetter.fromOrdinal(j))

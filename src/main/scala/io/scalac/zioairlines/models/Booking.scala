@@ -36,7 +36,7 @@ private case class Booking(
     else
       cancelCancel *> bookingsRef.flatMap(_.update(copy(delayedCancellation = UIO.never)))
 
-  private def cancel: STM[SeatsNotAvailable, Unit] =
+  private def cancel: USTM[Unit] =
     cancelCancel *>
       (if seatAssignments.nonEmpty then flight.releaseSeats(seatAssignments) else STM.unit) *>
       bookingsRef.flatMap(_.cancel(flight, bookingNumber))
@@ -69,11 +69,11 @@ object Booking:
     get(bookingNumber, _.book)
 
   def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist | SeatsNotAvailable, BookingAlreadyCanceled] =
-    (bookingsRef.flatMap(_.get(bookingNumber).foldSTM({
+    bookingsRef.flatMap(_.get(bookingNumber).foldSTM({
       _ match
         case _   : BookingTimeExpired  => STM.succeed(true)
         case bdne: BookingDoesNotExist => STM.fail(bdne)
-    }, _.cancel *> STM.succeed(false))): STM[BookingDoesNotExist | SeatsNotAvailable, BookingAlreadyCanceled]).commit
+    }, _.cancel *> STM.succeed(false))).commit
 
   private def get[E](bookingNumber: BookingNumber, f: Booking => STM[E, Unit]) =
     ((for
