@@ -34,7 +34,7 @@ private case class Booking(
     else if canceled then
       STM.fail(new BookingTimeExpired)
     else
-      cancelPotentialCancel *> bookingsRef.flatMap(_.update(copy(potentialCancellation = UIO.never)))
+      cancelPotentialCancel
 
   private def cancel: USTM[Unit] =
     cancelPotentialCancel *>
