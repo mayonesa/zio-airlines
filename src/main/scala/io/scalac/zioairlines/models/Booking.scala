@@ -38,7 +38,9 @@ private case class Booking(
 
   private def cancel: USTM[Unit] =
     cancelPotentialCancel *>
-      (if seatAssignments.nonEmpty then flight.releaseSeats(seatAssignments) else STM.unit) *>
+      (if seatAssignments.nonEmpty
+      then flight.releaseSeats(seatAssignments)
+      else STM.unit) *>
       bookingsRef.flatMap(_.cancel(flight, bookingNumber))
 
   private def cancelPotentialCancel = TRef.make(potentialCancellation.flatMap(_.interrupt))
