@@ -34,7 +34,7 @@ private case class Booking(
     else if canceled then
       STM.fail(new BookingTimeExpired)
     else
-      cancelPotentialCancel
+      cancelPotentialCancel *> STM.unit
 
   private def cancel: USTM[Unit] =
     cancelPotentialCancel *>
