@@ -70,10 +70,9 @@ object Booking:
 
   def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingCancellationResult] =
     call(bookingNumber, { booking =>
-      if booking.canceled then
-        STM.succeed(BookingCancellationResult.CanceledBeforehand)
-      else
-        booking.cancel *> STM.succeed(BookingCancellationResult.Done)
+      if booking.canceled
+      then STM.succeed(BookingCancellationResult.CanceledBeforehand)
+      else booking.cancel *> STM.succeed(BookingCancellationResult.Done)
     })
 
   private def call[E, A](bookingNumber: BookingNumber, f: Booking => STM[E, A]) =
