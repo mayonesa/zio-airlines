@@ -57,7 +57,7 @@ object Booking:
 
   def selectSeats(
     bookingNumber: BookingNumber,
-    seats: Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
+    seats        : Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
   ): IO[BookingTimeExpired | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
     call(bookingNumber, _.assignSeats(seats))
 
