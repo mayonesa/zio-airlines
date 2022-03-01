@@ -2,38 +2,30 @@ package io.scalac.zioairlines.models
 
 import zio.NonEmptyChunk
 import zio.stm.{STM, TRef, USTM}
+
 import io.scalac.zioairlines.exceptions.SeatsNotAvailable
 import io.scalac.zioairlines.adts.{Coordinates, OptionsMatrix}
 import io.scalac.zioairlines.models.SeatingArrangement.coordinates
 
 class SeatingArrangement private (arrangementRef: TRef[OptionsMatrix[String]]):
   private[models] def assignSeats(seats: Set[SeatAssignment]): STM[SeatsNotAvailable, Unit] =
-    def loop(restOfSeats: Set[SeatAssignment], invalidSeats: Set[Seat]): STM[SeatsNotAvailable, Unit] =
-      restOfSeats.headOption.fold(
-        if invalidSeats.nonEmpty
-        then STM.fail(SeatsNotAvailable(NonEmptyChunk.fromIterable(invalidSeats.head, invalidSeats.tail)))
-        else STM.succeed(())
-      ) { seatIntent =>
-        val cell = coordinates(seatIntent)
-        val i = cell.i
-        val j = cell.j
-        val tail = restOfSeats.tail
+    for
+      arrangement <- arrangementRef.get
+      withSeats   <- STM.fromEither(seats.foldLeft[Either[NonEmptyChunk[Seat], OptionsMatrix[String]]](
+        Right(arrangement)
+      ) { (acc, intendedSeat) =>
+        val seat = intendedSeat.seat
 
-        arrangementRef.get.flatMap { arrangement =>
-          if arrangement.isEmptyAt(i, j) then
+        acc.fold({ invalidSeats =>
+          Left(invalidSeats :+ seat)
+        }, { arrangementInstance =>
+          val cell = coordinates(intendedSeat)
 
-            // calculate new arrangement and set only if not a lost cause already
-            if invalidSeats.isEmpty then
-              val updatedArrangement = arrangement.set(i, j)(seatIntent.passengerName)
-              arrangementRef.set(updatedArrangement)
-
-            loop(tail, invalidSeats)
-          else
-            loop(tail, invalidSeats + seatIntent.seat)
-        }
-      }
-
-    loop(seats, Set())
+          arrangementInstance.addIfEmpty(cell.i, cell.j)(intendedSeat.passengerName).toRight(NonEmptyChunk(seat))
+        })
+      }.left.map(SeatsNotAvailable(_)))
+      _           <- arrangementRef.set(withSeats)
+    yield ()
 
   private[models] def releaseSeats(seats: Set[SeatAssignment]): USTM[Unit] =
     arrangementRef.update { arrangement =>
