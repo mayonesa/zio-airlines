@@ -28,13 +28,14 @@ class SeatingArrangement private (arrangementRef: TRef[OptionsMatrix[String]]):
     yield ()
 
   private[models] def releaseSeats(seats: Set[SeatAssignment]): USTM[Unit] =
+    val cells = seats.map(coordinates)
+
     arrangementRef.update { arrangement =>
-      assert(!seats.exists { seatAssignment =>
-        val cell = coordinates(seatAssignment)
+      assert(!cells.exists { cell =>
         arrangement.isEmptyAt(cell.i, cell.j)
       }, s"seat-arrangement integrity issue discovered during seat-release: at least one seat in ${seats.mkString(",")} was empty")
 
-      arrangement.emptyAt(seats.map(coordinates))
+      arrangement.emptyAt(cells)
     }
 
   private[models] def availableSeats: USTM[Set[Seat]] = arrangementRef.get.map(_.empties.map { seat =>
