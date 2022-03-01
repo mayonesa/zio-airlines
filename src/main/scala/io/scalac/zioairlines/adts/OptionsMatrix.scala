@@ -7,9 +7,9 @@ type Index = Int
 case class Coordinates(i: Index, j: Index)
 
 class OptionsMatrix[A] private (matrix: Vector[Vector[Option[A]]], nDefineds: Int):
-  def isEmptyAt(i: Int, j: Int): Boolean = matrix(i)(j).isEmpty
+  def isEmptyAt(i: Index, j: Index): Boolean = matrix(i)(j).isEmpty
   
-  def set(i: Int, j: Int)(a: => A): OptionsMatrix[A] =
+  def set(i: Index, j: Index)(a: => A): OptionsMatrix[A] =
     OptionsMatrix(setCell(i, j, matrix)(Some(a)), nDefineds + 1)
 
   def addIfEmpty(i: Int, j: Int)(a: => A): Option[OptionsMatrix[A]] =
@@ -35,5 +35,5 @@ object OptionsMatrix:
     val matrix = Vector.fill(nRows, nCols)(Option.empty[A])
     OptionsMatrix(matrix, 0)
 
-  private def setCell[A](i: Int, j: Int, matrix: Vector[Vector[Option[A]]])(cell: => Option[A]) =
+  private def setCell[A](i: Index, j: Index, matrix: Vector[Vector[Option[A]]])(cell: => Option[A]) =
     matrix.updated(i, matrix(i).updated(j, cell))
