@@ -49,4 +49,4 @@ object SeatingArrangement:
   private def coordinates(seatAssignment: SeatAssignment) =
     val seat = seatAssignment.seat
 
-    Coordinates(seat.row.ordinal, seat.seat.ordinal)
+    Coordinates(seat.row.ordinal, seat.letter.ordinal)
