@@ -20,11 +20,11 @@ private case class Booking(
     seatSelections: Set[SeatAssignment]
   ): STM[SeatsNotAvailable | BookingTimeExpired | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
     if canceled then
-      STM.fail(new BookingTimeExpired)
+      STM.fail(BookingTimeExpired())
     else if seatAssignments.nonEmpty then
-      STM.fail(new BookingStepOutOfOrder("You cannot add seats more than once to a booking"))
+      STM.fail(BookingStepOutOfOrder("You cannot add seats more than once to a booking"))
     else if seatSelections.isEmpty then
-      STM.fail(new NoSeatsSelected)
+      STM.fail(NoSeatsSelected())
     else
       flight.assignSeats(seatSelections) *> bookingsRef.flatMap(_.update(copy(seatAssignments = seatSelections)))
 
@@ -32,7 +32,7 @@ private case class Booking(
     if seatAssignments.isEmpty then
       STM.fail(BookingStepOutOfOrder("Must assign seats beforehand"))
     else if canceled then
-      STM.fail(new BookingTimeExpired)
+      STM.fail(BookingTimeExpired())
     else
       cancelPotentialCancel *> STM.unit
 

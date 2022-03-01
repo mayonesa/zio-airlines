@@ -16,7 +16,7 @@ private class Bookings(ref: TRef[IncrementingKeyMap[Booking]]):
 
   private[models] def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist, Booking] =
     ref.get.flatMap { bookings =>
-      STM.fromEither(bookings.get(bookingNumber).toRight(new BookingDoesNotExist(bookingNumber)))
+      STM.fromEither(bookings.get(bookingNumber).toRight(BookingDoesNotExist(bookingNumber)))
     }
 
   private[models] def update(booking: Booking): USTM[Unit] = ref.update(_.updated(booking.bookingNumber, booking))
