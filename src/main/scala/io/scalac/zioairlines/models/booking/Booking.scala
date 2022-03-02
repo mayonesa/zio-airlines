@@ -1,13 +1,15 @@
-package io.scalac.zioairlines.models
-
-import zio.*
-import zio.stm.{STM, USTM, TRef}
+package io.scalac.zioairlines.models.booking
 
 import io.scalac.zioairlines.exceptions.*
-import io.scalac.zioairlines.models.Booking.bookingsRef
+import Booking.bookingsRef
+import io.scalac.zioairlines.models.seating.SeatAssignment
+import io.scalac.zioairlines.models.flight.Flight
+
+import zio.*
+import zio.stm.{STM, TRef, USTM}
 
 type BookingNumber = Int
-val CancellationDelay = 5.minutes
+val BookingTimeLimit = 5.minutes
 
 private case class Booking(
   flight               : Flight,

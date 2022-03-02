@@ -1,11 +1,11 @@
-package io.scalac.zioairlines.models
+package io.scalac.zioairlines.models.seating
+
+import io.scalac.zioairlines.adts.{Coordinates, OptionsMatrix}
+import io.scalac.zioairlines.exceptions.SeatsNotAvailable
+import SeatingArrangement.coordinates
 
 import zio.NonEmptyChunk
 import zio.stm.{STM, TRef, USTM}
-
-import io.scalac.zioairlines.exceptions.SeatsNotAvailable
-import io.scalac.zioairlines.adts.{Coordinates, OptionsMatrix}
-import io.scalac.zioairlines.models.SeatingArrangement.coordinates
 
 class SeatingArrangement private (arrangementRef: TRef[OptionsMatrix[String]]):
   private[models] def assignSeats(seats: Set[SeatAssignment]): STM[SeatsNotAvailable, Unit] =
@@ -42,8 +42,8 @@ class SeatingArrangement private (arrangementRef: TRef[OptionsMatrix[String]]):
     Seat(SeatRow.fromOrdinal(seat.i), SeatLetter.fromOrdinal(seat.j))
   })
 
-object SeatingArrangement:
-  def empty: USTM[SeatingArrangement] =
+private[models] object SeatingArrangement:
+  private[models] def empty: USTM[SeatingArrangement] =
     TRef.make(OptionsMatrix.empty[String](SeatRow.values.length, SeatLetter.values.length)).map(SeatingArrangement(_))
 
   private def coordinates(seatAssignment: SeatAssignment) =

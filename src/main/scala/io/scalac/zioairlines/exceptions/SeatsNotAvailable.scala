@@ -1,7 +1,6 @@
 package io.scalac.zioairlines.exceptions
 
-import io.scalac.zioairlines.models.Seat
-
+import io.scalac.zioairlines.models.seating.Seat
 import zio.NonEmptyChunk
 
 class SeatsNotAvailable(notAvailables: NonEmptyChunk[Seat]) extends ZioAirlinesException(

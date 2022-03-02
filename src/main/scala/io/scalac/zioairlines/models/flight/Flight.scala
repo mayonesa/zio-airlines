@@ -1,6 +1,8 @@
-package io.scalac.zioairlines.models
+package io.scalac.zioairlines.models.flight
 
 import io.scalac.zioairlines.exceptions.{FlightDoesNotExist, SeatsNotAvailable, ZioAirlinesException}
+import io.scalac.zioairlines.models.seating.{Seat, SeatAssignment, SeatingArrangement}
+
 import zio.IO
 import zio.stm.{STM, USTM}
 
