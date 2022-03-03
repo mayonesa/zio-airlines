@@ -51,13 +51,9 @@ object Booking:
   private val bookingsRef = Bookings.empty
 
   def beginBooking(flightNumber: String): IO[FlightDoesNotExist, BookingNumber] =
-    (for
-      flightOptRef  <- TRef.make(Flight.fromFlightNumber(flightNumber))
-      flightOpt     <- flightOptRef.get
-      bookingNumber <- flightOpt.fold(STM.fail(FlightDoesNotExist(flightNumber))) { flight =>
-        bookingsRef.flatMap(_.add(flight))
-      }
-    yield bookingNumber).commit
+    Flight.fromFlightNumber(flightNumber).fold(IO.fail(FlightDoesNotExist(flightNumber))) { flight =>
+      bookingsRef.flatMap(_.add(flight)).commit
+    }
 
   def selectSeats(
     bookingNumber: BookingNumber,
