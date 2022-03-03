@@ -1,9 +1,9 @@
 package io.scalac.zioairlines.models.booking
 
 import io.scalac.zioairlines.exceptions.*
-import Booking.bookingsRef
 import io.scalac.zioairlines.models.seating.SeatAssignment
 import io.scalac.zioairlines.models.flight.Flight
+import Booking.bookingsRef
 
 import zio.*
 import zio.stm.{STM, TRef, USTM}
