@@ -24,7 +24,7 @@ class OptionsMatrix[A] private (matrix: Vector[Vector[Option[A]]], nDefineds: In
 
   def mapOptions[B](f: Option[A] => B): Vector[Vector[B]] = matrix.map(_.map(f))
 
-  def atCapacity: Boolean = nDefineds == matrix.size * matrix.head.size
+  def percentCapacity: Int = nDefineds / matrix.size * matrix.head.size * 100
 
 object OptionsMatrix:
   def empty[A](nRows: Int, nCols: Int): OptionsMatrix[A] =
