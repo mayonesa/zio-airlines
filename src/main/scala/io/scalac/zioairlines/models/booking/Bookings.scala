@@ -1,8 +1,9 @@
 package io.scalac.zioairlines.models.booking
 
-import io.scalac.zioairlines.adts.IncrementingKeyMap
-import io.scalac.zioairlines.exceptions.{BookingDoesNotExist, BookingTimeExpired}
-import io.scalac.zioairlines.models.flight.Flight
+import io.scalac.zioairlines
+import zioairlines.adts.IncrementingKeyMap
+import zioairlines.exceptions.{BookingDoesNotExist, BookingTimeExpired}
+import zioairlines.models.flight.Flight
 
 import zio.URIO
 import zio.stm.{STM, TRef, USTM}

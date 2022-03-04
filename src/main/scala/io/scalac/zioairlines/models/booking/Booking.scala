@@ -1,8 +1,9 @@
 package io.scalac.zioairlines.models.booking
 
-import io.scalac.zioairlines.exceptions.*
-import io.scalac.zioairlines.models.seating.SeatAssignment
-import io.scalac.zioairlines.models.flight.Flight
+import io.scalac.zioairlines
+import zioairlines.exceptions.*
+import zioairlines.models.seating.{SeatAssignment, AvailableSeats}
+import zioairlines.models.flight.Flight
 import Booking.bookingsRef
 
 import zio.*
@@ -50,9 +51,9 @@ private case class Booking(
 object Booking:
   private val bookingsRef = Bookings.empty
 
-  def beginBooking(flightNumber: String): IO[FlightDoesNotExist, BookingNumber] =
+  def beginBooking(flightNumber: String): IO[FlightDoesNotExist, (BookingNumber, AvailableSeats)] =
     Flight.fromFlightNumber(flightNumber).fold(IO.fail(FlightDoesNotExist(flightNumber))) { flight =>
-      bookingsRef.flatMap(_.add(flight)).commit
+      bookingsRef.flatMap(_.add(flight) <*> flight.availableSeats).commit
     }
 
   def selectSeats(
