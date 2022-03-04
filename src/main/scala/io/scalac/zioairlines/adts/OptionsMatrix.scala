@@ -22,13 +22,7 @@ class OptionsMatrix[A] private (matrix: Vector[Vector[Option[A]]], nDefineds: In
       setCell(coordinates.i, coordinates.j, acc)(None)
     }, nDefineds - coordinatesSet.size)
 
-  def definedsMatrix: Vector[Vector[Boolean]] = matrix.map(_.map(_.isDefined))
-
-  def empties: Set[Coordinates] =
-    (for
-      (column, i) <- matrix.zipWithIndex
-      j           <- column.indices
-    yield Coordinates(i, j)).toSet
+  def definitionMatrix: Vector[Vector[Boolean]] = matrix.map(_.map(_.isDefined))
 
   def atCapacity: Boolean = nDefineds == matrix.size * matrix.head.size
 
