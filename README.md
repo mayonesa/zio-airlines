@@ -17,16 +17,15 @@ as an aid in learning some of the more salient aspects of ZIO.
 - Booking will consist of the following stages: 
   1. **flight selection**
   2. **seat selection/assignment** from available seats (since client code may not be able to guarantee that the seat 
-selections input is not stale (e.g., RESTful API), there is the possibility that a subset of the seats have been 
+selections input is not stale, there is the possibility that a subset of the seats have been 
 occupied by another client. In said case, the error channel should wholly indicate which of the seats are no longer 
 available)
   3. **confirm booking**
 - Once started, a booking will have 5 minutes for completion. If not completed within said time, booking will be 
 invalidated and the seats therein become eligible for booking by any user.
-- A booking can be cancelled at any time before the actual flight (only the reservation number is required if booking
-already completed).
-- Insure integrity in a concurrent-booking context but a whole flight should not be "locked" throughout the entirety of
-an ongoing same-flight booking process (i.e., flight selection, seat selection, and confirmation).
+- A booking can be cancelled at any time before the actual flight (reservation number is the only required parameter).
+- Ensure integrity in a concurrent-booking context but a whole flight should not be "locked" throughout the entirety of
+the booking process (i.e., flight selection, seat selection, and confirmation).
 
 ### Part 2: Flight (Under construction)
 The year is 2027. ZIO Airlines only serves markets it has exclusive rights to and has also embraced an adhoc flight-
