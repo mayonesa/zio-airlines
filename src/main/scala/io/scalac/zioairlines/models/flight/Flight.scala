@@ -21,14 +21,19 @@ private[models] class Flight(private[models] val flightNumber: String):
   private def onSeatingArrangement[E, A](f: SeatingArrangement => STM[E, A]) = seatingArrangement.flatMap(f)
 
 object Flight:
-  val flights: Seq[Flight] = flightNumbers.map(Flight(_))
+  // handle sensible variations
+  private val upperCaseFlightNumber = flightNumbers("ZIO")
+  private val lowerCaseFlightNumbers = flightNumbers("zio")
+  private val capitalizedFlightNumbers = flightNumbers("Zio")
 
-  private val flightNumbers = (1 to 20).map("ZIO" + _)
-  private val flightsByNumber = (zipFlights(identity) ++ zipFlights(_.toLowerCase)).toMap
+  val flights: Seq[Flight] = upperCaseFlightNumber.map(Flight(_))
+
+  private val flightsByNumber = (upperCaseFlightNumber.zip(flights) ++ lowerCaseFlightNumbers.zip(flights) ++
+    capitalizedFlightNumbers.zip(flights)).toMap
 
   def availableSeats(flightNumber: String): IO[FlightDoesNotExist, AvailableSeats] =
     fromFlightNumber(flightNumber).fold(IO.fail(FlightDoesNotExist(flightNumber)))(_.availableSeats.commit)
 
   def fromFlightNumber(flightNumber: String): Option[Flight] = flightsByNumber.get(flightNumber)
 
-  private def zipFlights(f: String => String) = flightNumbers.map(f).zip(flights)
+  private def flightNumbers(pre: String) = (1 to 20).map(pre + _)
