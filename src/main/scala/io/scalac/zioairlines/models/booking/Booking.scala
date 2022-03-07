@@ -17,7 +17,7 @@ private case class Booking(
   canceled             : Boolean = false,
   seatAssignments      : Set[SeatAssignment] = Set()
 ):
-  private def assignSeats(
+  private[booking] def assignSeats(
     seatSelections: Set[SeatAssignment]
   ): STM[SeatsNotAvailable | BookingTimeExpired | BookingStepOutOfOrder | NoSeatsSelected, Booking] =
     if canceled then
@@ -29,7 +29,7 @@ private case class Booking(
     else
       flight.assignSeats(seatSelections) *> STM.succeed(copy(seatAssignments = seatSelections))
 
-  private def book: STM[BookingTimeExpired | BookingStepOutOfOrder, Unit] =
+  private[booking] def book: STM[BookingTimeExpired | BookingStepOutOfOrder, Unit] =
     if seatAssignments.isEmpty then
       STM.fail(BookingStepOutOfOrder("Must assign seats beforehand"))
     else if canceled then
@@ -37,7 +37,7 @@ private case class Booking(
     else
       cancelPotentialCancel *> STM.unit
 
-  private def cancel: USTM[Unit] =
+  private[booking] def cancel: USTM[Unit] =
     cancelPotentialCancel *>
       (if seatAssignments.nonEmpty
       then flight.releaseSeats(seatAssignments)

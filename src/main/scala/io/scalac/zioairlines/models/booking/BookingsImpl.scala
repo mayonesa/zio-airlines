@@ -14,7 +14,7 @@ import zio.stm.{STM, TRef, USTM}
 private[booking] class BookingsImpl(bookingsRef: TRef[IncrementingKeyMap[Booking]]) extends Bookings:
   override def beginBooking(flightNumber: String): IO[FlightDoesNotExist, (BookingNumber, AvailableSeats)] =
     Flight.fromFlightNumber(flightNumber).fold(IO.fail(FlightDoesNotExist(flightNumber))) { flight =>
-      bookingsRef.get.flatMap(_.add(flight) <*> flight.availableSeats).commit
+      (add(flight) <*> flight.availableSeats).commit
     }
 
   override def selectSeats(
@@ -39,8 +39,7 @@ private[booking] class BookingsImpl(bookingsRef: TRef[IncrementingKeyMap[Booking
 
   private def call[E, A](bookingNumber: BookingNumber, f: Booking => STM[E, A]) =
     ((for
-      bookings <- bookingsRef
-      booking  <- bookings.get(bookingNumber)
+      booking  <- get(bookingNumber)
       a        <- f(booking)
     yield a): STM[E | BookingDoesNotExist, A]).commit
 
