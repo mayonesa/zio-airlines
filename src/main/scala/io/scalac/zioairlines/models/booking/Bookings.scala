@@ -4,34 +4,71 @@ import io.scalac.zioairlines
 import zioairlines.adts.IncrementingKeyMap
 import zioairlines.exceptions.{BookingDoesNotExist, BookingTimeExpired}
 import zioairlines.models.flight.Flight
-
-import zio.URIO
+import zio.{IO, URIO}
 import zio.stm.{STM, TRef, USTM}
 
-private[booking] trait Bookings:
-  private[booking] def add(flight: Flight): USTM[BookingNumber]
-  private[booking] def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist, Booking]
-  private[booking] def update(booking: Booking): USTM[Unit]
-  private[booking] def cancel(flight: Flight, bookingNumber: BookingNumber): USTM[Unit]
+trait Bookings:
+  def beginBooking(flightNumber: String): IO[FlightDoesNotExist, (BookingNumber, AvailableSeats)]
+  
+  def selectSeats(
+    bookingNumber: BookingNumber,
+    seats        : Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
+  ): IO[BookingTimeExpired | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected, Unit]
 
+  def book(
+    bookingNumber: BookingNumber
+  ): IO[BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit]
+
+  def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingCancellationResult]
+  
 private[booking] object Bookings:
-  private[booking] def empty: USTM[Bookings] = TRef.make(IncrementingKeyMap.empty[Booking]).map(BookingsImpl(_))
+  private[booking] def apply: USTM[Bookings] = TRef.make(IncrementingKeyMap.empty[Booking]).map(BookingsImpl(_))
 
   private class BookingsImpl(ref: TRef[IncrementingKeyMap[Booking]]) extends Bookings:
-    override private[booking] def add(flight: Flight): USTM[BookingNumber] =
+    override def beginBooking(flightNumber: String): IO[FlightDoesNotExist, (BookingNumber, AvailableSeats)] =
+      Flight.fromFlightNumber(flightNumber).fold(IO.fail(FlightDoesNotExist(flightNumber))) { flight =>
+        bookingsRef.flatMap(_.add(flight) <*> flight.availableSeats).commit
+      }
+  
+    override def selectSeats(
+      bookingNumber: BookingNumber,
+      seats        : Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
+    ): IO[BookingTimeExpired | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
+      call(bookingNumber, _.assignSeats(seats))
+  
+    override def book(
+      bookingNumber: BookingNumber
+    ): IO[BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
+      call(bookingNumber, _.book)
+  
+    override def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingCancellationResult] =
+      call(bookingNumber, { booking =>
+        if booking.canceled
+        then STM.succeed(BookingCancellationResult.CanceledBeforehand)
+        else booking.cancel *> STM.succeed(BookingCancellationResult.Done)
+      })
+  
+    private def call[E, A](bookingNumber: BookingNumber, f: Booking => STM[E, A]) =
+      ((for
+        bookings <- bookingsRef
+        booking  <- bookings.get(bookingNumber)
+        a        <- f(booking)
+      yield a): STM[E | BookingDoesNotExist, A]).commit
+      
+    def add(flight: Flight): USTM[BookingNumber] =
       ref.update { bookings0 =>
         val bookingNumber = bookings0.nextKey
         val potentialCancellation = cancel(flight, bookingNumber).commit.delay(BookingTimeLimit).fork
         bookings0.add(Booking(flight, bookingNumber, potentialCancellation))
       } *> ref.get.map(_.nextKey)
 
-    override private[booking] def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist, Booking] =
+    def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist, Booking] =
       ref.get.flatMap { bookings =>
         STM.fromEither(bookings.get(bookingNumber).toRight(BookingDoesNotExist(bookingNumber)))
       }
 
-    override private[booking] def update(booking: Booking): USTM[Unit] =
+    def update(booking: Booking): USTM[Unit] =
       ref.update(_.updated(booking.bookingNumber, booking))
 
-    override private[booking] def cancel(flight: Flight, bookingNumber: BookingNumber): USTM[Unit] =
+    def cancel(flight: Flight, bookingNumber: BookingNumber): USTM[Unit] =
       update(Booking(flight, bookingNumber, URIO.never, true))

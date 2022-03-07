@@ -51,32 +51,3 @@ private case class Booking(
 object Booking:
   private val bookingsRef = Bookings.empty
 
-  def beginBooking(flightNumber: String): IO[FlightDoesNotExist, (BookingNumber, AvailableSeats)] =
-    Flight.fromFlightNumber(flightNumber).fold(IO.fail(FlightDoesNotExist(flightNumber))) { flight =>
-      bookingsRef.flatMap(_.add(flight) <*> flight.availableSeats).commit
-    }
-
-  def selectSeats(
-    bookingNumber: BookingNumber,
-    seats        : Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
-  ): IO[BookingTimeExpired | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
-    call(bookingNumber, _.assignSeats(seats))
-
-  def book(
-    bookingNumber: BookingNumber
-  ): IO[BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
-    call(bookingNumber, _.book)
-
-  def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingCancellationResult] =
-    call(bookingNumber, { booking =>
-      if booking.canceled
-      then STM.succeed(BookingCancellationResult.CanceledBeforehand)
-      else booking.cancel *> STM.succeed(BookingCancellationResult.Done)
-    })
-
-  private def call[E, A](bookingNumber: BookingNumber, f: Booking => STM[E, A]) =
-    ((for
-      bookings <- bookingsRef
-      booking  <- bookings.get(bookingNumber)
-      a        <- f(booking)
-    yield a): STM[E | BookingDoesNotExist, A]).commit
