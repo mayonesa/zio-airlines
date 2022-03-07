@@ -7,11 +7,11 @@ import zioairlines.models
 import models.flight.Flight
 import models.seating.{SeatAssignment, AvailableSeats}
 
-import zio.{IO, URIO}
+import zio.{IO, URIO, UIO}
 import zio.stm.{STM, TRef, USTM}
 
 
-private[booking] class BookingsImpl(bookingsRef: TRef[IncrementingKeyMap[Booking]]) extends Bookings:
+private class BookingsImpl(bookingsRef: TRef[IncrementingKeyMap[Booking]]) extends Bookings:
   override def beginBooking(flightNumber: String): IO[FlightDoesNotExist, (BookingNumber, AvailableSeats)] =
     Flight.fromFlightNumber(flightNumber).fold(IO.fail(FlightDoesNotExist(flightNumber))) { flight =>
       (add(flight) <*> flight.availableSeats).commit
@@ -60,3 +60,7 @@ private[booking] class BookingsImpl(bookingsRef: TRef[IncrementingKeyMap[Booking
 
   private def replaceWithCancelled(flight: Flight, bookingNumber: BookingNumber): USTM[Unit] =
     update(Booking(flight, bookingNumber, URIO.never, true))
+
+private[booking] object BookingsImpl:
+  private[booking] val singleton: UIO[Bookings] = 
+    TRef.make(IncrementingKeyMap.empty[Booking]).map(BookingsImpl(_)).commit

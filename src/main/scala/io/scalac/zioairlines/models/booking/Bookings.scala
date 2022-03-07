@@ -8,7 +8,7 @@ import models.flight.Flight
 import models.seating.{SeatAssignment, AvailableSeats}
 
 import zio._
-import zio.stm.{STM, TRef, USTM}
+import zio.stm.TRef
 
 val BookingTimeLimit = 5.minutes
 
@@ -27,4 +27,4 @@ trait Bookings:
   def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingCancellationResult]
   
 object Bookings:
-  def apply: USTM[Bookings] = TRef.make(IncrementingKeyMap.empty[Booking]).map(BookingsImpl(_))
+  val singleton: UIO[Bookings] = BookingsImpl.singleton
