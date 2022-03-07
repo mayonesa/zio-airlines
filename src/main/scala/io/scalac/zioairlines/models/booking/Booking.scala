@@ -4,13 +4,11 @@ import io.scalac.zioairlines
 import zioairlines.exceptions.*
 import zioairlines.models.seating.{SeatAssignment, AvailableSeats}
 import zioairlines.models.flight.Flight
-import Booking.bookingsRef
 
 import zio.*
 import zio.stm.{STM, TRef, USTM}
 
 type BookingNumber = Int
-val BookingTimeLimit = 5.minutes
 
 private case class Booking(
   flight               : Flight,
@@ -21,7 +19,7 @@ private case class Booking(
 ):
   private def assignSeats(
     seatSelections: Set[SeatAssignment]
-  ): STM[SeatsNotAvailable | BookingTimeExpired | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
+  ): STM[SeatsNotAvailable | BookingTimeExpired | BookingStepOutOfOrder | NoSeatsSelected, Booking] =
     if canceled then
       STM.fail(BookingTimeExpired())
     else if seatAssignments.nonEmpty then
@@ -29,7 +27,7 @@ private case class Booking(
     else if seatSelections.isEmpty then
       STM.fail(NoSeatsSelected())
     else
-      flight.assignSeats(seatSelections) *> bookingsRef.flatMap(_.update(copy(seatAssignments = seatSelections)))
+      flight.assignSeats(seatSelections) *> STM.succeed(copy(seatAssignments = seatSelections))
 
   private def book: STM[BookingTimeExpired | BookingStepOutOfOrder, Unit] =
     if seatAssignments.isEmpty then
@@ -43,11 +41,6 @@ private case class Booking(
     cancelPotentialCancel *>
       (if seatAssignments.nonEmpty
       then flight.releaseSeats(seatAssignments)
-      else STM.unit) *>
-      bookingsRef.flatMap(_.cancel(flight, bookingNumber))
+      else STM.unit)
 
   private def cancelPotentialCancel = TRef.make(potentialCancellation.flatMap(_.interrupt))
-
-object Booking:
-  private val bookingsRef = Bookings.empty
-
