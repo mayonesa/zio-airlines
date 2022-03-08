@@ -16,11 +16,11 @@ trait Bookings:
   def selectSeats(
     bookingNumber: BookingNumber,
     seats        : Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
-  ): IO[BookingTimeExpired | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected, Unit]
+  ): IO[BookingTimeExpired.type | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected.type, Unit]
 
   def book(
     bookingNumber: BookingNumber
-  ): IO[BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit]
+  ): IO[BookingTimeExpired.type | BookingDoesNotExist | BookingStepOutOfOrder, Unit]
 
   def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingCancellationResult]
   
@@ -31,12 +31,12 @@ object Bookings:
   def selectSeats(
     bookingNumber: BookingNumber,
     seats        : Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
-  ): ZIO[Bookings, BookingTimeExpired | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
+  ): ZIO[Bookings, BookingTimeExpired.type | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected.type, Unit] =
     ZIO.serviceWithZIO[Bookings](_.selectSeats(bookingNumber, seats))
 
   def book(
     bookingNumber: BookingNumber
-  ): ZIO[Bookings, BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
+  ): ZIO[Bookings, BookingTimeExpired.type | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
     ZIO.serviceWithZIO[Bookings](_.book(bookingNumber))
 
   def cancelBooking(bookingNumber: BookingNumber): ZIO[Bookings, BookingDoesNotExist, BookingCancellationResult] =

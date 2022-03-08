@@ -21,12 +21,12 @@ private class BookingsLive(bookingsRef: TRef[IncrementingKeyMap[Booking]]) exten
   override def selectSeats(
     bookingNumber: BookingNumber,
     seats        : Set[SeatAssignment]
-  ): IO[BookingTimeExpired | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
+  ): IO[BookingTimeExpired.type | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected.type, Unit] =
     call(bookingNumber, _.assignSeats(seats).flatMap(update))
 
   override def book(
     bookingNumber: BookingNumber
-  ): IO[BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
+  ): IO[BookingTimeExpired.type | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
     call(bookingNumber, _.book)
 
   override def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingCancellationResult] =

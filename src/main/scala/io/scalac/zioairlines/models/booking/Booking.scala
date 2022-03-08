@@ -19,21 +19,21 @@ private case class Booking(
 ):
   private[booking] def assignSeats(
     seatSelections: Set[SeatAssignment]
-  ): STM[SeatsNotAvailable | BookingTimeExpired | BookingStepOutOfOrder | NoSeatsSelected, Booking] =
+  ): STM[SeatsNotAvailable | BookingTimeExpired.type | BookingStepOutOfOrder | NoSeatsSelected.type, Booking] =
     if canceled then
-      STM.fail(BookingTimeExpired())
+      STM.fail(BookingTimeExpired)
     else if seatAssignments.nonEmpty then
       STM.fail(BookingStepOutOfOrder("You cannot add seats more than once to a booking"))
     else if seatSelections.isEmpty then
-      STM.fail(NoSeatsSelected())
+      STM.fail(NoSeatsSelected)
     else
       flight.assignSeats(seatSelections) *> STM.succeed(copy(seatAssignments = seatSelections))
 
-  private[booking] def book: STM[BookingTimeExpired | BookingStepOutOfOrder, Unit] =
+  private[booking] def book: STM[BookingTimeExpired.type | BookingStepOutOfOrder, Unit] =
     if seatAssignments.isEmpty then
       STM.fail(BookingStepOutOfOrder("Must assign seats beforehand"))
     else if canceled then
-      STM.fail(BookingTimeExpired())
+      STM.fail(BookingTimeExpired)
     else
       cancelPotentialCancel *> STM.unit
 
