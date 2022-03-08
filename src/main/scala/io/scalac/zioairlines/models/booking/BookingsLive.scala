@@ -45,11 +45,11 @@ private class BookingsLive(bookingsRef: TRef[IncrementingKeyMap[Booking]]) exten
     yield a): STM[E | BookingDoesNotExist, A]).commit
 
   private def add(flight: Flight): USTM[BookingNumber] =
-    bookingsRef.update { bookings =>
+    bookingsRef.modify { bookings =>
       val bookingNumber = bookings.nextKey
       val potentialCancellation = replaceWithCancelled(flight, bookingNumber).commit.delay(BookingTimeLimit).fork
-      bookings.add(Booking(flight, bookingNumber, potentialCancellation))
-    } *> bookingsRef.get.map(_.nextKey)
+      (bookingNumber, bookings.add(Booking(flight, bookingNumber, potentialCancellation)))
+    }
 
   private def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist, Booking] =
     bookingsRef.get.flatMap { bookings =>
