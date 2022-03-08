@@ -5,13 +5,14 @@ import zioairlines.adts.IncrementingKeyMap
 import zioairlines.exceptions.*
 import zioairlines.models
 import models.flight.Flight
-import models.seating.{SeatAssignment, AvailableSeats}
+import models.seating.{AvailableSeats, SeatAssignment}
 
-import zio.{IO, URIO, UIO}
-import zio.stm.{STM, TRef, USTM}
+import zio._
+import zio.stm.{STM, TRef, USTM, ZSTM}
 
+val BookingTimeLimit = 5.minutes
 
-private class BookingsImpl(bookingsRef: TRef[IncrementingKeyMap[Booking]]) extends Bookings:
+private class BookingsLive(bookingsRef: TRef[IncrementingKeyMap[Booking]]) extends Bookings:
   override def beginBooking(flightNumber: String): IO[FlightDoesNotExist, (BookingNumber, AvailableSeats)] =
     Flight.fromFlightNumber(flightNumber).fold(IO.fail(FlightDoesNotExist(flightNumber))) { flight =>
       (add(flight) <*> flight.availableSeats).commit
@@ -44,10 +45,10 @@ private class BookingsImpl(bookingsRef: TRef[IncrementingKeyMap[Booking]]) exten
     yield a): STM[E | BookingDoesNotExist, A]).commit
 
   private def add(flight: Flight): USTM[BookingNumber] =
-    bookingsRef.update { bookings0 =>
-      val bookingNumber = bookings0.nextKey
+    bookingsRef.update { bookings =>
+      val bookingNumber = bookings.nextKey
       val potentialCancellation = replaceWithCancelled(flight, bookingNumber).commit.delay(BookingTimeLimit).fork
-      bookings0.add(Booking(flight, bookingNumber, potentialCancellation))
+      bookings.add(Booking(flight, bookingNumber, potentialCancellation))
     } *> bookingsRef.get.map(_.nextKey)
 
   private def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist, Booking] =
@@ -61,6 +62,6 @@ private class BookingsImpl(bookingsRef: TRef[IncrementingKeyMap[Booking]]) exten
   private def replaceWithCancelled(flight: Flight, bookingNumber: BookingNumber): USTM[Unit] =
     update(Booking(flight, bookingNumber, URIO.never, true))
 
-private[booking] object BookingsImpl:
-  private[booking] val singleton: UIO[Bookings] = 
-    TRef.make(IncrementingKeyMap.empty[Booking]).map(BookingsImpl(_)).commit
+private[booking] object BookingsLive:
+  val layer: ULayer[Bookings] =
+    TRef.make(IncrementingKeyMap.empty[Booking]).map(BookingsLive(_)).commit.toLayer[Bookings]

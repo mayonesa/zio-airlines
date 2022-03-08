@@ -10,8 +10,6 @@ import models.seating.{SeatAssignment, AvailableSeats}
 import zio._
 import zio.stm.TRef
 
-val BookingTimeLimit = 5.minutes
-
 trait Bookings:
   def beginBooking(flightNumber: String): IO[FlightDoesNotExist, (BookingNumber, AvailableSeats)]
   
@@ -27,4 +25,19 @@ trait Bookings:
   def cancelBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, BookingCancellationResult]
   
 object Bookings:
-  val singleton: UIO[Bookings] = BookingsImpl.singleton
+  def beginBooking(flightNumber: String): ZIO[Bookings, FlightDoesNotExist, (BookingNumber, AvailableSeats)] =
+    ZIO.serviceWithZIO[Bookings](_.beginBooking(flightNumber))
+
+  def selectSeats(
+    bookingNumber: BookingNumber,
+    seats        : Set[SeatAssignment] // set (as opposed to non-empty) because it is more difficult to deal w/ dupes
+  ): ZIO[Bookings, BookingTimeExpired | BookingDoesNotExist | SeatsNotAvailable | BookingStepOutOfOrder | NoSeatsSelected, Unit] =
+    ZIO.serviceWithZIO[Bookings](_.selectSeats(bookingNumber, seats))
+
+  def book(
+    bookingNumber: BookingNumber
+  ): ZIO[Bookings, BookingTimeExpired | BookingDoesNotExist | BookingStepOutOfOrder, Unit] =
+    ZIO.serviceWithZIO[Bookings](_.book(bookingNumber))
+
+  def cancelBooking(bookingNumber: BookingNumber): ZIO[Bookings, BookingDoesNotExist, BookingCancellationResult] =
+    ZIO.serviceWithZIO[Bookings](_.cancelBooking(bookingNumber))
