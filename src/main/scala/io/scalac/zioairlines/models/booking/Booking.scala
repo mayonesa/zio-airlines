@@ -10,7 +10,7 @@ import zio.stm.{STM, TRef, USTM}
 
 type BookingNumber = Int
 
-private case class Booking(
+private[booking] case class Booking(
   flight               : Flight,
   bookingNumber        : BookingNumber,
   potentialCancellation: URIO[Clock, Fiber.Runtime[Nothing, Unit]],
@@ -27,7 +27,7 @@ private case class Booking(
     else if seatSelections.isEmpty then
       STM.fail(NoSeatsSelected)
     else
-      flight.assignSeats(seatSelections) *> STM.succeed(copy(seatAssignments = seatSelections))
+      flight.seatingArrangement.assignSeats(seatSelections) *> STM.succeed(copy(seatAssignments = seatSelections))
 
   private[booking] def book: STM[BookingTimeExpired.type | BookingStepOutOfOrder, Unit] =
     if seatAssignments.isEmpty then
@@ -40,7 +40,7 @@ private case class Booking(
   private[booking] def cancel: USTM[Unit] =
     cancelPotentialCancel *>
       (if seatAssignments.nonEmpty
-      then flight.releaseSeats(seatAssignments)
+      then flight.seatingArrangement.releaseSeats(seatAssignments)
       else STM.unit)
 
   private def cancelPotentialCancel = TRef.make(potentialCancellation.flatMap(_.interrupt))

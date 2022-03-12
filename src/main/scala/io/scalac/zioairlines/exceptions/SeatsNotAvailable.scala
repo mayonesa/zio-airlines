@@ -4,5 +4,5 @@ import io.scalac.zioairlines.models.seating.Seat
 import zio.NonEmptyChunk
 
 class SeatsNotAvailable(notAvailables: NonEmptyChunk[Seat]) extends ZioAirlinesException(
-  "seats " + notAvailables.toCons.mkString(", ") + " not available"
+  "seat" + (if notAvailables.length == 1 then " " else "s ") + notAvailables.toCons.mkString(", ") + " not available"
 )

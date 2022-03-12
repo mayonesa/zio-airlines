@@ -14,9 +14,9 @@ val BookingTimeLimit = 5.minutes
 
 private class BookingsLive(bookingsRef: TRef[IncrementingKeyMap[Booking]]) extends Bookings:
   override def beginBooking(flightNumber: String): IO[FlightDoesNotExist, (BookingNumber, AvailableSeats)] =
-    Flight.fromFlightNumber(flightNumber).fold(IO.fail(FlightDoesNotExist(flightNumber))) { flight =>
-      (add(flight) <*> flight.availableSeats).commit
-    }
+    Flight.fromFlightNumber(flightNumber).fold(IO.fail(FlightDoesNotExist(flightNumber)))(_.flatMap { flight =>
+      add(flight).commit <*> flight.seatingArrangement.availableSeats.commit
+    })
 
   override def selectSeats(
     bookingNumber: BookingNumber,

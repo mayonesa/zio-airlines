@@ -41,7 +41,9 @@ class SeatingArrangement private (arrangementRef: TRef[OptionsMatrix[String]]):
       arrangement.emptyAt(cells)
     }
 
-  private[models] def availableSeats: USTM[AvailableSeats] = arrangementRef.get.map(_.definitionMatrix)
+  private[models] def availableSeats: USTM[AvailableSeats] = arrangementRef.get.map(_.mapOptions(_.isEmpty))
+
+  override def toString: String = s"SeatingArrangement($arrangementRef)"
 
 private[models] object SeatingArrangement:
   private[models] def empty: USTM[SeatingArrangement] =

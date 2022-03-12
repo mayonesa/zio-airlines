@@ -22,11 +22,11 @@ class OptionsMatrix[A] private (matrix: Vector[Vector[Option[A]]], nDefineds: In
       setCell(coordinates.i, coordinates.j, acc)(None)
     }, nDefineds - coordinatesSet.size)
 
-  def definitionMatrix: Vector[Vector[Boolean]] = mapOptions(_.isDefined)
-
   def mapOptions[B](f: Option[A] => B): Vector[Vector[B]] = matrix.map(_.map(f))
 
   def percentCapacity: Int = nDefineds / matrix.size * matrix.head.size * 100
+
+  override def toString: String = matrix.toString
 
 object OptionsMatrix:
   def empty[A](nRows: Int, nCols: Int): OptionsMatrix[A] =
