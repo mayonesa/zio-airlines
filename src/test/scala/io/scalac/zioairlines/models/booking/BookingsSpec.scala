@@ -48,8 +48,8 @@ object BookingsSpec extends DefaultRunnableSpec:
       assertM((BeginBooking *> SelectSeats).provideLayer(Live))(equalTo(()))
     },
     test("pre-selected seats not available") {
-      (BeginBooking *> SelectSeats *> BeginBooking).provideLayer(Live).map { (_, availableSeats) =>
-        assertTrue(availableSeats.indices.forall { i =>
+      (BeginBooking *> SelectSeats *> BeginBooking).provideLayer(Live).map { (bookingNumber, availableSeats) =>
+        assertTrue(bookingNumber == 2, availableSeats.indices.forall { i =>
           availableSeats(i).indices.forall { j =>
             val available = availableSeats(i)(j)
             val preselected = i == FirstRow.ordinal && (j == A.ordinal || j == B.ordinal)
