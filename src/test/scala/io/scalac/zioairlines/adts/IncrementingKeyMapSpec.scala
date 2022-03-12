@@ -7,13 +7,13 @@ class IncrementingKeyMapSpec extends AnyFlatSpec:
   private val mapWithA = IncrementingKeyMap.empty.add(A)
 
   "add" should "add" in {
-    assert(A == mapWithA.get(1).get)
+    assert(A === mapWithA.get(1).get)
   }
   "update" should "update" in {
     val b = 'b'
     val k = 1
-    assert(mapWithA.updated(k, b).get(k).get == b)
+    assert(mapWithA.updated(k, b).get(k).get === b)
   }
   "nextKey" should "next-key" in {
-    assert(mapWithA.nextKey == 2)
+    assert(mapWithA.nextKey === 2)
   }
