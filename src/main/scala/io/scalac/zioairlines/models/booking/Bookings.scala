@@ -4,7 +4,7 @@ import io.scalac.zioairlines
 import zioairlines.adts.IncrementingKeyMap
 import zioairlines.exceptions.*
 import zioairlines.models
-import models.flight.Flight
+import models.flight.Flights
 import models.seating.{SeatAssignment, AvailableSeats}
 
 import zio._

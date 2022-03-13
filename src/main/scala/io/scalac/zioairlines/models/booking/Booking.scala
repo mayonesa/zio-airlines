@@ -3,7 +3,7 @@ package io.scalac.zioairlines.models.booking
 import io.scalac.zioairlines
 import zioairlines.exceptions.*
 import zioairlines.models.seating.{SeatAssignment, AvailableSeats}
-import zioairlines.models.flight.Flight
+import zioairlines.models.flight.Flights
 
 import zio.*
 import zio.stm.{STM, TRef, USTM}
@@ -11,7 +11,7 @@ import zio.stm.{STM, TRef, USTM}
 type BookingNumber = Int
 
 private[booking] case class Booking(
-  flight               : Flight,
+  flight               : Flights,
   bookingNumber        : BookingNumber,
   potentialCancellation: URIO[Clock, Fiber.Runtime[Nothing, Unit]],
   canceled             : Boolean = false,

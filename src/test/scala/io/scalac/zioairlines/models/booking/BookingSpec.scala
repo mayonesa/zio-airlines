@@ -1,7 +1,7 @@
 package io.scalac.zioairlines.models.booking
 
 import io.scalac.zioairlines.models
-import models.flight.Flight
+import models.flight.Flights
 import models.seating.{Seat, SeatAssignment, SeatLetter, SeatRow}
 
 import zio.*
@@ -21,7 +21,7 @@ object BookingSpec extends DefaultRunnableSpec:
   def spec = suite("BookingSpec")(
     test("available seats should respect taken ones") {
       for
-        flight          <- Flight.flights.head
+        flight          <- Flights.flights.head
         booking0        =  Booking(flight, 1, UIO.never)
         booking         <- booking0.assignSeats(SeatAssignments).commit
         availableSeats  <- booking.flight.seatingArrangement.availableSeats.commit

@@ -6,50 +6,36 @@ import zioairlines.exceptions.SeatsNotAvailable
 import SeatingArrangement.coordinates
 
 import zio.NonEmptyChunk
-import zio.stm.{STM, TRef, USTM}
 
 type AvailableSeats = Vector[Vector[Boolean]]
 
-class SeatingArrangement private (arrangementRef: TRef[OptionsMatrix[String]]):
-  private[models] def assignSeats(seats: Set[SeatAssignment]): STM[SeatsNotAvailable, Unit] =
-    for
-      arrangement <- arrangementRef.get
-      withSeats   <- STM.fromEither(seats.foldLeft[Either[NonEmptyChunk[Seat], OptionsMatrix[String]]](
-        Right(arrangement)
-      ) { (acc, intendedSeat) =>
-        val seat = intendedSeat.seat
+private[models] class SeatingArrangement private (arrangement: OptionsMatrix[String]):
+  private[models] def assignSeats(seats: Set[SeatAssignment]): Either[SeatsNotAvailable, SeatingArrangement] =
+    seats.foldLeft[Either[NonEmptyChunk[Seat], OptionsMatrix[String]]](Right(arrangement)) { (acc, intendedSeat) =>
+      val seat = intendedSeat.seat
+      acc.fold({ invalidSeats =>
+        Left(invalidSeats :+ seat)
+      }, { arrangementInstance =>
+        val cell = coordinates(intendedSeat)
+        arrangementInstance.addIfEmpty(cell.i, cell.j)(intendedSeat.passengerName).toRight(NonEmptyChunk(seat))
+      })
+    }.map(SeatingArrangement(_)).left.map(SeatsNotAvailable(_))
 
-        acc.fold({ invalidSeats =>
-          Left(invalidSeats :+ seat)
-        }, { arrangementInstance =>
-          val cell = coordinates(intendedSeat)
-
-          arrangementInstance.addIfEmpty(cell.i, cell.j)(intendedSeat.passengerName).toRight(NonEmptyChunk(seat))
-        })
-      }.left.map(SeatsNotAvailable(_)))
-      _           <- arrangementRef.set(withSeats)
-    yield ()
-
-  private[models] def releaseSeats(seats: Set[SeatAssignment]): USTM[Unit] =
+  private[models] def releaseSeats(seats: Set[SeatAssignment]): SeatingArrangement =
     val cells = seats.map(coordinates)
+    assert(!cells.exists { cell =>
+      arrangement.isEmptyAt(cell.i, cell.j)
+    }, s"seat-arrangement integrity issue discovered during seat-release: one or more of ${seats.mkString(",")} was empty")
+    SeatingArrangement(arrangement.emptyAt(cells))
 
-    arrangementRef.update { arrangement =>
-      assert(!cells.exists { cell =>
-        arrangement.isEmptyAt(cell.i, cell.j)
-      }, s"seat-arrangement integrity issue discovered during seat-release: at least one seat in ${seats.mkString(",")} was empty")
+  private[models] def availableSeats: AvailableSeats = arrangement.mapOptions(_.isEmpty)
 
-      arrangement.emptyAt(cells)
-    }
-
-  private[models] def availableSeats: USTM[AvailableSeats] = arrangementRef.get.map(_.mapOptions(_.isEmpty))
-
-  override def toString: String = s"SeatingArrangement($arrangementRef)"
+  override def toString: String = s"SeatingArrangement($arrangement)"
 
 private[models] object SeatingArrangement:
-  private[models] def empty: USTM[SeatingArrangement] =
-    TRef.make(OptionsMatrix.empty[String](SeatRow.values.length, SeatLetter.values.length)).map(SeatingArrangement(_))
+  private[models] def empty: SeatingArrangement =
+    SeatingArrangement(OptionsMatrix.empty[String](SeatRow.values.length, SeatLetter.values.length))
 
   private def coordinates(seatAssignment: SeatAssignment) =
     val seat = seatAssignment.seat
-
     Coordinates(seat.row.ordinal, seat.letter.ordinal)

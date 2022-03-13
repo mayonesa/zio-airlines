@@ -16,7 +16,7 @@ object FlightSpec extends DefaultRunnableSpec:
 
   def spec = suite("FlightSpec")(
     test("reflect assigned seats") {
-      Flight.fromFlightNumber("ZIO1").get.flatMap { flight =>
+      Flights.fromFlightNumber("ZIO1").get.flatMap { flight =>
         flight.seatingArrangement.assignSeats(SeatAssignments).commit *>
           flight.seatingArrangement.availableSeats.commit.map { availableSeats =>
             assertTrue(availableSeats.indices.forall { i =>
