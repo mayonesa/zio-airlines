@@ -7,15 +7,15 @@ trait IncrementingKeyMap[A]:
   def get(k: Int): Option[A]
 
 object IncrementingKeyMap:
-  def empty[A]: IncrementingKeyMap[A] = new IncrementingKeyMapImpl(Map.empty, 0)
-  
-  private class IncrementingKeyMapImpl[A](map: Map[Int, A], latestKey: Int) extends IncrementingKeyMap[A]:
-    override def add(a: A): IncrementingKeyMap[A] =
-      val k = nextKey
-      IncrementingKeyMapImpl(map + (k -> a), k)
+  def empty[A]: IncrementingKeyMap[A] = new IncrementingKeyMapImpl(Vector.empty[A])
 
-    override def updated(k: Int, a: A): IncrementingKeyMap[A] = new IncrementingKeyMapImpl(map.updated(k, a), latestKey)
+  protected[IncrementingKeyMap] def toIndex(k: Int): Int = k - 1
 
-    override def nextKey: Int = latestKey + 1
+  private class IncrementingKeyMapImpl[A](map: Vector[A]) extends IncrementingKeyMap[A]:
+    override def add(a: A): IncrementingKeyMap[A] = IncrementingKeyMapImpl(map :+ a)
 
-    override def get(k: Int): Option[A] = map.get(k)
+    override def updated(k: Int, a: A): IncrementingKeyMap[A] = new IncrementingKeyMapImpl(map.updated(toIndex(k), a))
+
+    override def nextKey: Int = map.length + 1
+
+    override def get(k: Int): Option[A] = if k > 0 && toIndex(k) < map.size then Some(map(toIndex(k))) else None
