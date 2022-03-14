@@ -2,20 +2,19 @@ package io.scalac.zioairlines.models.booking
 
 import io.scalac.zioairlines
 import zioairlines.exceptions.*
-import zioairlines.models.seating.{SeatAssignment, AvailableSeats}
-import zioairlines.models.flight.Flights
-
+import zioairlines.models.seating.{AvailableSeats, SeatAssignment}
+import zioairlines.models.flight.FlightNumber
 import zio.*
-import zio.stm.{STM, TRef, USTM}
+import zio.stm.STM
 
 type BookingNumber = Int
 
-private[booking] case class Booking(
-  flight               : Flights,
-  bookingNumber        : BookingNumber,
-  potentialCancellation: URIO[Clock, Fiber.Runtime[Nothing, Unit]],
-  canceled             : Boolean = false,
-  seatAssignments      : Set[SeatAssignment] = Set()
+case class Booking private[booking] (
+  flightNumber                     : FlightNumber,
+  bookingNumber                    : BookingNumber,
+  private val potentialCancellation: URIO[Clock, Fiber.Runtime[Nothing, Unit]],
+  canceled                         : Boolean = false,
+  seatAssignments                  : Set[SeatAssignment] = Set()
 ):
   private[booking] def assignSeats(
     seatSelections: Set[SeatAssignment]
@@ -27,20 +26,15 @@ private[booking] case class Booking(
     else if seatSelections.isEmpty then
       STM.fail(NoSeatsSelected)
     else
-      flight.seatingArrangement.assignSeats(seatSelections) *> STM.succeed(copy(seatAssignments = seatSelections))
+      STM.succeed(copy(seatAssignments = seatSelections))
 
-  private[booking] def book: STM[BookingTimeExpired.type | BookingStepOutOfOrder, Unit] =
+  private[booking] def book: ZIO[Clock, BookingTimeExpired.type | BookingStepOutOfOrder, Unit] =
     if seatAssignments.isEmpty then
-      STM.fail(BookingStepOutOfOrder("Must assign seats beforehand"))
+      IO.fail(BookingStepOutOfOrder("Must assign seats beforehand"))
     else if canceled then
-      STM.fail(BookingTimeExpired)
+      IO.fail(BookingTimeExpired)
     else
-      cancelPotentialCancel *> STM.unit
+      cancelPotentialCancel.unit
 
-  private[booking] def cancel: USTM[Unit] =
-    cancelPotentialCancel *>
-      (if seatAssignments.nonEmpty
-      then flight.seatingArrangement.releaseSeats(seatAssignments)
-      else STM.unit)
-
-  private def cancelPotentialCancel = TRef.make(potentialCancellation.flatMap(_.interrupt))
+  private[booking] def cancelPotentialCancel: URIO[Clock, Exit[Nothing, Unit]] =
+    potentialCancellation.flatMap(_.interrupt)

@@ -1,13 +1,13 @@
-# ZIO Airlines
+# ZA Airlines
 It's the only way to fly.
 
 ## Objective
-Meant to help start out with ZIO. Build an application that will handle airline bookings and subsequent flights. Will be 
+Meant to help start out with ZA. Build an application that will handle airline bookings and subsequent flights. Will be 
 limited to subset of features of a full-fledged application (or a realistic sim) due to its expressed purpose of serving
-as an aid in learning some of the more salient aspects of ZIO.
+as an aid in learning some of the more salient aspects of ZA.
 
 ## General rules
-- Use ZIO
+- Use ZA
 - Submission: open across-fork PR with branch name specifying which part is being submitted (e.g., flight).
 - Help: Zionomicon (Slack: #zionomicon) is the ideal companion for this project.
 
@@ -28,7 +28,7 @@ invalidated and the seats therein become eligible for booking by any user.
 the booking process (i.e., flight selection, seat selection, and confirmation).
 
 ### Part 2: Flight (Under construction)
-The year is 2027. ZIO Airlines only serves markets it has exclusive rights to and has also embraced an adhoc flight-
+The year is 2027. ZA Airlines only serves markets it has exclusive rights to and has also embraced an adhoc flight-
 operations model. Therefore, 
 - Once a flight is full and a plane is ready, the flight will be queued up for departure. Additionally,
 - A plane needs 5 minutes to ready for next flight after landing.
@@ -45,11 +45,11 @@ operations model. Therefore,
 - Airplanes have an average speed of 1000 Km/h regardless of distance.
 
 ### Part 3: Emergency! (Under construction)
-Unfortunately, emergencies are part and parcel of this industry and ZIO Airlines is no exception but, at the 
+Unfortunately, emergencies are part and parcel of this industry and ZA Airlines is no exception but, at the 
 prodding of the associated government-powers-that-be, some mitigating procedures have been put in place:
-- Every airplane of its fleet must send ZIO Central an "I'm-flying" signal (only when it actually is) every 10 seconds 
+- Every airplane of its fleet must send ZA Central an "I'm-flying" signal (only when it actually is) every 10 seconds 
 with its current location and fuel left.
-- Every airplane, when given the signal to abort, must do so by landing on the nearest ZIO market.
+- Every airplane, when given the signal to abort, must do so by landing on the nearest ZA market.
 - There is a possibility for planes to not make it to an airport either due to lack of fuel, crash, and/or terrorism.
 The latter should automatically send a fleet-wide abort signal.
 - Once within proximity, landing priority shall be given to the plane with the least amount of fuel (consumed at a 
