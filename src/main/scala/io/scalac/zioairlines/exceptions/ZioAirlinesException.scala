@@ -1,3 +1,3 @@
 package io.scalac.zioairlines.exceptions
 
-abstract class ZioAirlinesException(msg: String) extends Exception(msg)
+abstract class ZioAirlinesException private[exceptions] (msg: String) extends Exception(msg)
