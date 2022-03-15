@@ -1,4 +1,4 @@
-# ZA Airlines
+# ZIO Airlines
 It's the only way to fly.
 
 ## Objective
