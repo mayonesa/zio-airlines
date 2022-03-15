@@ -49,7 +49,7 @@ operations model. Therefore,
 - Airplanes have an average speed of 1000 Km/h regardless of distance.
 
 ### Part 4: Emergency! (Under construction)
-Unfortunately, emergencies are part and parcel of this industry and ZA Airlines is no exception but, at the 
+Unfortunately, emergencies are part and parcel of this industry and ZIO Airlines is no exception but, at the 
 prodding of the associated government-powers-that-be, some mitigating procedures have been put in place:
 - Every airplane of its fleet must send ZIO Central an "I'm-flying" signal (only when it actually is) every 10 seconds 
 with its current location and fuel left.
