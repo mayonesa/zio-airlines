@@ -17,8 +17,8 @@ class SeatingArrangementSpec extends AnyFlatSpec:
       assert(availableSeats.indices.forall { i =>
         availableSeats(i).indices.forall { j =>
           val available = availableSeats(i)(j)
-          val preselected = i == FirstRow.ordinal && (j == A.ordinal || j == B.ordinal)
-          available != preselected
+          val preselected = i === FirstRow.ordinal && (j == A.ordinal || j == B.ordinal)
+          available !== preselected
         }
       })
     }
