@@ -6,7 +6,9 @@ import zio.test.Assertion._
 import zio.test.TestAspect.ignore
 
 import io.scalac.zioairlines
-import zioairlines.models.seating.{Seat, SeatRow, SeatLetter, SeatAssignment}
+import zioairlines.models
+import models.seating.{Seat, SeatRow, SeatLetter, SeatAssignment}
+import models.flight.FlightNumber
 import zioairlines.exceptions.*
 
 object BookingsSpec extends DefaultRunnableSpec:
@@ -17,7 +19,7 @@ object BookingsSpec extends DefaultRunnableSpec:
   private val `1A` = Seat(FirstRow, A)
   private val `1B` = Seat(FirstRow, B)
   private val FirstBookingNumber = 1
-  private val BeginBooking = Bookings.beginBooking("ZIO1")
+  private val BeginBooking = Bookings.beginBooking(FlightNumber.ZA10)
   private val pepeSeat = SeatAssignment("pepe", `1A`)
   private val SeatAssignments = Set(pepeSeat, SeatAssignment("tito", `1B`))
   private val SelectSeats = Bookings.selectSeats(FirstBookingNumber, SeatAssignments)
@@ -36,12 +38,6 @@ object BookingsSpec extends DefaultRunnableSpec:
     test("no seats selected") {
       assertM((BeginBooking *> Bookings.selectSeats(FirstBookingNumber, Set())).provideLayer(Live).exit)(
         fails(equalTo(NoSeatsSelected))
-      )
-    },
-    test("flight does not exist") {
-      val badFlightNumber = "CATS1"
-      assertM(Bookings.beginBooking(badFlightNumber).provideLayer(Live).exit)(
-        fails(equalTo(FlightDoesNotExist(badFlightNumber)))
       )
     },
     test("select seats") {

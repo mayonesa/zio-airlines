@@ -1,7 +1,7 @@
 package io.scalac.zioairlines.models.booking
 
 import io.scalac.zioairlines.models
-import models.flight.Flights
+import models.flight.FlightNumber
 import models.seating.{Seat, SeatAssignment, SeatLetter, SeatRow}
 
 import zio.*
@@ -20,17 +20,8 @@ object BookingSpec extends DefaultRunnableSpec:
 
   def spec = suite("BookingSpec")(
     test("available seats should respect taken ones") {
-      for
-        flight          <- Flights.flights.head
-        booking0        =  Booking(flight, 1, UIO.never)
-        booking         <- booking0.assignSeats(SeatAssignments).commit
-        availableSeats  <- booking.flight.seatingArrangement.availableSeats.commit
-      yield assertTrue(booking.seatAssignments == SeatAssignments, availableSeats.indices.forall { i =>
-        availableSeats(i).indices.forall { j =>
-          val available = availableSeats(i)(j)
-          val preselected = i == FirstRow.ordinal && (j == A.ordinal || j == B.ordinal)
-          available != preselected
-        }
-      })
+      Booking(FlightNumber.ZA10, 1, UIO.never).assignSeats(SeatAssignments).commit.map { booking =>
+        assertTrue(booking.seatAssignments == SeatAssignments)
+      }
     }
   )
