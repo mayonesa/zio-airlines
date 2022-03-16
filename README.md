@@ -27,7 +27,7 @@ invalidated and the seats therein become eligible for booking by any user.
 - Ensure integrity in a concurrent-booking context but a whole flight should not be "locked" throughout the entirety of
 the booking process (i.e., flight selection, seat selection, and confirmation).
 
-### Part 2: REST it
+### Part 2: Put it to REST
 - Use ZIO-HTTP to make the application RESTful (For the adventurous type, there's a [DSL under development](https://github.com/kitlangton/zio-app) 
 that may make ZIO-HTTP more palatable)
 - Endpoint API:
