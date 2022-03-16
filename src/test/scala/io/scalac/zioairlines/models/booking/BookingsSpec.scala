@@ -19,10 +19,12 @@ object BookingsSpec extends DefaultRunnableSpec:
   private val `1A` = Seat(FirstRow, A)
   private val `1B` = Seat(FirstRow, B)
   private val FirstBookingNumber = 1
-  private val BeginBooking = Bookings.beginBooking(FlightNumber.ZA10)
   private val pepeSeat = SeatAssignment("pepe", `1A`)
   private val SeatAssignments = Set(pepeSeat, SeatAssignment("tito", `1B`))
+  private val BeginBooking = Bookings.beginBooking(FlightNumber.ZA10)
   private val SelectSeats = Bookings.selectSeats(FirstBookingNumber, SeatAssignments)
+  private val Book = Bookings.book(FirstBookingNumber)
+  private val Cancel = Bookings.cancelBooking(FirstBookingNumber)
 
   def spec = suite("Single-fiber BookingsSpec")(
     test("book-start") {
@@ -58,14 +60,39 @@ object BookingsSpec extends DefaultRunnableSpec:
       assertM((BeginBooking *> SelectSeats *> BeginBooking *> Bookings.selectSeats(2, SeatAssignments))
         .provideLayer(Live).exit)(fails(equalTo(SeatsNotAvailable(NonEmptyChunk(`1A`, `1B`)))))
     },
-    test("some of the seats not available")(
+    test("some of the seats not available") {
       assertM((BeginBooking *> SelectSeats *> BeginBooking *>
         Bookings.selectSeats(2, Set(pepeSeat))).provideLayer(Live).exit)(
-        fails(equalTo(SeatsNotAvailable(NonEmptyChunk(`1A`))))
+        fails(equalTo(SeatsNotAvailable(NonEmptyChunk(`1A`)))
+        )
       )
-    ),
-    test("selecting same seats on different flight")(???) @@ ignore,
-    test("selecting seats on booked booking")(???) @@ ignore,
-    test("selecting seats on canceled booking")(???) @@ ignore,
-    test("selecting seats on expired booking-time")(???) @@ ignore,
+    },
+    test("selecting same seats on different flight") {
+      assertM((BeginBooking *> SelectSeats *> Bookings.beginBooking(FlightNumber.ZA9) *>
+        Bookings.selectSeats(2, SeatAssignments)).provideLayer(Live))(equalTo(()))
+    },
+    test("book") {
+      assertM((BeginBooking *> SelectSeats *> Book).provideCustomLayer(Live))(equalTo(()))
+    },
+    test("selecting seats on booked booking") {
+      assertM((BeginBooking *> SelectSeats *> Book *> SelectSeats).provideCustomLayer(Live).exit)(
+        fails(equalTo(BookingStepOutOfOrder("You cannot add seats more than once to a booking")))
+      )
+    },
+    test("cancel") {
+      assertM((BeginBooking *> SelectSeats *> Book *> Cancel).provideCustomLayer(Live))(
+        equalTo(BookingCancellationResult.Done)
+      )
+    },
+    test("selecting seats on canceled booking") {
+      assertM((BeginBooking *> SelectSeats *> Book *> Cancel *> SelectSeats).provideCustomLayer(Live).exit)(
+        fails(equalTo(BookingTimeExpired))
+      )
+    },
+    test("selecting seats on expired booking-time") {
+      assertM((BeginBooking *> TestClock.adjust(6.minutes) *> SelectSeats)
+        .provideLayer(Live ++ TestClock.default).exit)(fails(equalTo(BookingTimeExpired)))
+    },
+    test("cancel when already canceled")(???) @@ ignore,
+    test("cancel with expired booking-time")(???) @@ ignore,
   )

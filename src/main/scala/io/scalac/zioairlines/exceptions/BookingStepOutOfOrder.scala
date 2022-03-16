@@ -1,3 +1,3 @@
 package io.scalac.zioairlines.exceptions
 
-class BookingStepOutOfOrder(msg: String) extends ZioAirlinesException(msg)
+case class BookingStepOutOfOrder(msg: String) extends ZioAirlinesException(msg)

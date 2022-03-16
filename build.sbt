@@ -18,3 +18,5 @@ libraryDependencies ++= Seq(
 )
 
 scalacOptions += "-language:postfixOps"
+
+testFrameworks := Seq(new TestFramework("zio.test.sbt.ZTestFramework"))

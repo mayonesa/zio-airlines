@@ -46,9 +46,7 @@ private class BookingsLive(
           replaceWithCancelled(booking.flightNumber, bookingNumber)).as(BookingCancellationResult.Done)
     }
 
-  private def withBookingsZIO[R, E <: ZioAirlinesException, A](
-    bookingNumber: BookingNumber
-  )(
+  private def withBookingsZIO[R, E <: ZioAirlinesException, A](bookingNumber: BookingNumber)(
     f: Booking => ZIO[R, E, A]
   ): ZIO[R, BookingDoesNotExist | E, A] =
     bookingsRef.get.commit.flatMap(_.get(bookingNumber).fold(ZIO.fail(BookingDoesNotExist(bookingNumber)))(f))
