@@ -14,7 +14,8 @@ val BookingTimeLimit = 5.minutes
 
 private class BookingsLive(
   bookingsRef: TRef[IncrementingKeyMap[Booking]],
-  seatArrangements: TArray[SeatingArrangement]) extends Bookings:
+  seatArrangements: TArray[SeatingArrangement]
+) extends Bookings:
   override def beginBooking(flightNumber: FlightNumber): UIO[(BookingNumber, AvailableSeats)] =
     seatArrangements(flightNumber.ordinal).flatMap { seatArrangement =>
       addBookingsRef(flightNumber) <*> STM.succeed(seatArrangement.availableSeats)
@@ -46,6 +47,11 @@ private class BookingsLive(
           replaceWithCancelled(booking.flightNumber, bookingNumber)).as(BookingCancellationResult.Done)
     }
 
+  override def availableSeats(bookingNumber: BookingNumber): IO[BookingDoesNotExist, AvailableSeats] =
+    withBookingsZIO(bookingNumber) { booking =>
+      seatArrangements(booking.flightNumber.ordinal).commit.map(_.availableSeats)
+    }
+
   private def withBookingsZIO[R, E <: ZioAirlinesException, A](bookingNumber: BookingNumber)(
     f: Booking => ZIO[R, E, A]
   ): ZIO[R, BookingDoesNotExist | E, A] =
@@ -69,7 +75,7 @@ private class BookingsLive(
   private def replaceWithCancelled(flightNumber: FlightNumber, bookingNumber: BookingNumber): UIO[Unit] =
     updateBookingsRef(Booking(flightNumber, bookingNumber, URIO.never, true)).commit
 
-private[booking] object BookingsLive:
+object BookingsLive:
   val layer: ULayer[Bookings] =
     TRef.make(IncrementingKeyMap.empty[Booking]).flatMap { bookings =>
       TArray.fromIterable(FlightNumber.values.map { _ =>

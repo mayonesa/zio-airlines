@@ -23,7 +23,7 @@ class OptionsMatrix[A] private (matrix: Vector[Vector[Option[A]]], nDefineds: In
     }, nDefineds - coordinatesSet.size)
 
   def mapOptions[B](f: Option[A] => B): Vector[Vector[B]] = matrix.map(_.map(f))
-
+  
   def percentCapacity: Int = nDefineds / matrix.size * matrix.head.size * 100
 
   override def toString: String = matrix.toString

@@ -22,7 +22,9 @@ trait Bookings:
   ): ZIO[Clock, BookingTimeExpired.type | BookingDoesNotExist | BookingStepOutOfOrder, Unit]
 
   def cancelBooking(bookingNumber: BookingNumber): ZIO[Clock, BookingDoesNotExist, BookingCancellationResult]
-  
+
+  def availableSeats(bookingNumber: BookingNumber): IO[BookingDoesNotExist, AvailableSeats]
+
 object Bookings:
   def beginBooking(flightNumber: FlightNumber): URIO[Bookings, (BookingNumber, AvailableSeats)] =
     ZIO.serviceWithZIO[Bookings](_.beginBooking(flightNumber))
@@ -42,3 +44,6 @@ object Bookings:
     bookingNumber: BookingNumber
   ): ZIO[Bookings & Clock, BookingDoesNotExist, BookingCancellationResult] =
     ZIO.serviceWithZIO[Bookings](_.cancelBooking(bookingNumber))
+
+  def availableSeats(bookingNumber: BookingNumber): ZIO[Bookings, BookingDoesNotExist, AvailableSeats] =
+    ZIO.serviceWithZIO[Bookings](_.availableSeats(bookingNumber))

@@ -1,50 +1,81 @@
 package io.scalac.zioairlines.cli
 
 import zio.*
+import java.io.IOException
 
 import io.scalac.zioairlines.models
 import models.flight.FlightNumber
-import models.booking.{Bookings, BookingsLive}
+import models.booking.{Bookings, BookingsLive, BookingNumber}
+import models.seating.{SeatAssignment, Seat, AvailableSeats}
 
-class Terminal extends ZIOAppDefault:
-  private val Begin = 1
-  private val SelectSeats = 2
-  private val Book = 3
-  private val Cancel = 4
+object Terminal extends ZIOAppDefault:
+  private val Begin = "1"
+  private val SelectSeats = "2"
+  private val Book = "3"
+  private val Cancel = "4"
+  private val Done = "-999"
 
   private val getAction = for
-    _      <- Console.printLine(
-      s"""ZIO Airlines. It's the only way to fly.
-        |Choose [number]:
-        |[$Begin] Begin booking
-        |[$SelectSeats] Select seats
-        |[$Book] Book
-        |[$Cancel] Cancel booking
-        |[any other key] Exit
-        |""".stripMargin)
+    _      <- Console.printLine(s"""Choose [number]:
+      |[$Begin] Begin booking
+      |[$SelectSeats] Select seats
+      |[$Book] Book
+      |[$Cancel] Cancel booking
+      |[any other key] Exit
+      |""".stripMargin)
     action <- Console.readLine
-  yield action.toInt
+  yield action
 
-  private val live = BookingsLive.layer
-  
-  private val begin = for 
-    _                               <- Console.printLine("Choose flight number:")
-    _                               <- Console.printLine(FlightNumber.values.zipWithIndex.map { (flightNumber, i) =>
-      s"[${i + 1}] $flightNumber\n"
-    })
-    flightNumberNumeral             <- Console.readLine
-    flightNumber                    =  flightNumberNumeral.toInt - 1
-    res                             <- Bookings.beginBooking(flightNumber).provideLayer(live)
+  private val begin = for
+    flightNumberOrdinal             <- chooseOrdinal("flight number", FlightNumber.values)
+    flightNumber                    =  FlightNumber.fromOrdinal(flightNumberOrdinal)
+    res                             <- Bookings.beginBooking(flightNumber)
     (bookingNumber, availableSeats) =  res
-    _                               <- Console.printLine(s"booking number: $bookingNumber, available seats: " + 
-      availableSeats.mkString(", "))
+    _                               <- Console.printLine(s"booking number: $bookingNumber, available seats: " +
+      availableSeats.mkString(", ") + "\n")
   yield ()
 
-  def run =
-    getAction.flatMap { _ match
-      case Begin       => begin *> getAction
-      case SelectSeats => selectSeats *> getAction
-      case Book        => book *> getAction
-      case Cancel      => cancel *> getAction
+  private val selectSeats = for
+    bookingNumberStr <- Console.printLine("Enter booking number") *> Console.readLine
+    bookingNumber    =  bookingNumberStr.toInt
+    availableSeats   <- Bookings.availableSeats(bookingNumber)
+    seatsChosen      <- getSelectedSeats(availableSeats)
+    _                <- Bookings.selectSeats(bookingNumber, seatsChosen)
+  yield ()
+
+//  private val book: UIO[Unit] = ???
+//
+//  private val cancel: UIO[Unit] = ???
+
+  def run = {
+    lazy val nextAction: ZIO[Bookings & Console, Exception, Unit] = getAction.flatMap {
+      _ match
+        case Begin => begin *> nextAction
+        case SelectSeats => selectSeats *> nextAction
+      //      case Book        => book *> nextAction
+      //      case Cancel      => cancel *> nextAction
     }
-    
+    Console.printLine("ZIO Airlines... it's the only way to fly.") *> nextAction.provideCustomLayer(BookingsLive.layer)
+  }
+
+  private def getSelectedSeats(availableSeats: AvailableSeats) =
+    def loop(selectedSeats: Set[SeatAssignment]): ZIO[Console, IOException, Set[SeatAssignment]] =
+      Console.readLine.flatMap { entry =>
+        if entry == Done then
+          ZIO.succeed(selectedSeats)
+        else
+          val Array(passenger, seatStr) = entry.split(":")
+          loop(selectedSeats + SeatAssignment(passenger, Seat(seatStr)))
+      }
+
+    Console.printLine(s"Enter `passenger:seat` ($Done when done) from available seats:\n" +
+      availableSeats.mkString(",")) *> loop(Set())
+
+  private def chooseOrdinal[X](name: String, xs: Iterable[X]) =
+    for
+      _       <- Console.printLine(s"Choose $name:")
+      _       <- Console.printLine(xs.zipWithIndex.map { (x, i) =>
+        s"[${i + 1}] $x"
+      }.mkString(", "))
+      numeral <- Console.readLine
+    yield numeral.toInt - 1

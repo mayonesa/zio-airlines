@@ -13,7 +13,7 @@ class SeatingArrangementSpec extends AnyFlatSpec:
 
   "seating arrangement" should "reflect assigned seats" in {
     SeatingArrangement.empty.assignSeats(SeatAssignments).foreach { withSeats =>
-      val availableSeats = withSeats.availableSeats
+      val availableSeats = withSeats.availableSeatsMatrix
       assert(availableSeats.indices.forall { i =>
         availableSeats(i).indices.forall { j =>
           val available = availableSeats(i)(j)
