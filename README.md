@@ -28,8 +28,15 @@ invalidated and the seats therein become eligible for booking by any user.
 the booking process (i.e., flight selection, seat selection, and confirmation).
 
 ### Part 2: REST it
-- Use ZIO-HTTP to make the application RESTful (For the adventurous type, there's a [DSL under
-development](https://github.com/kitlangton/zio-app) that may make ZIO-HTTP more palatable)
+- Use ZIO-HTTP to make the application RESTful (For the adventurous type, there's a [DSL under development](https://github.com/kitlangton/zio-app) 
+that may make ZIO-HTTP more palatable)
+- Endpoint API:
+  - `GET: /zio-airlines/flights/` - returns an anonymous JSON array of all flight numbers
+  - `POST: /zio-airlines/flights/{flight_number}/bookings/start/` - starts booking process and returns `bookingNumber`
+and `availableSeats`  
+  - `POST: /zio-airlines/bookings/{booking_number}/select-seats/` - posts anonymous JSON array of selected seats
+  - `POST: /zio-airlines/bookings/{booking_number}/book/` - books flight
+  - `POST: /zio-airlines/bookings/{booking_number}/cancel/` - cancels booking
 
 ### Part 3: Flight (Under construction)
 The year is 2027. ZIO Airlines only serves markets it has exclusive rights to and has also embraced an adhoc flight-
