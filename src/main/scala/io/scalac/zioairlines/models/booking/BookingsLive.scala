@@ -18,13 +18,12 @@ private class BookingsLive(
 ) extends Bookings:
   override def beginBooking(flightNumber: FlightNumber): UIO[(BookingNumber, AvailableSeats)] =
     seatArrangements(flightNumber.ordinal).flatMap { seatArrangement =>
-      addBookingsRef(flightNumber) <*> STM.succeed(seatArrangement.availableSeats)
+      addNewBooking(flightNumber) <*> STM.succeed(seatArrangement.availableSeats)
     }.commit
 
   override def selectSeats(bookingNumber: BookingNumber, seats: Set[SeatAssignment]): IO[ZioAirlinesException, Unit] =
     (for
-      bookings         <- bookingsRef.get
-      booking          <- STM.fromEither(bookings.get(bookingNumber).toRight(BookingDoesNotExist(bookingNumber)))
+      booking          <- get(bookingNumber)
       bookingWithSeats <- booking.assignSeats(seats)
       _                <- updateBookingsRef(bookingWithSeats)
       _                <- seatArrangements.updateSTM(booking.flightNumber.ordinal, { seatArrangement =>
@@ -38,13 +37,14 @@ private class BookingsLive(
     withBookingsZIO(bookingNumber)(_.book)
 
   override def cancelBooking(bookingNumber: BookingNumber): ZIO[Clock, BookingDoesNotExist, BookingCancellationResult] =
-    withBookingsZIO(bookingNumber) { booking =>
-      if booking.canceled then
-        IO.succeed(BookingCancellationResult.CanceledBeforehand)
-      else
-        (booking.cancelPotentialCancel *>
-          seatArrangements.update(booking.flightNumber.ordinal, _.releaseSeats(booking.seatAssignments)).commit *>
-          replaceWithCancelled(booking.flightNumber, bookingNumber)).as(BookingCancellationResult.Done)
+    (for
+      booking <- get(bookingNumber)
+      result  <- if booking.canceled then STM.succeed(BookingCancellationResult.CanceledBeforehand) else
+        val flightNumber = booking.flightNumber
+        (seatArrangements.update(flightNumber.ordinal, _.releaseSeats(booking.seatAssignments)) *>
+          updateBookingsRef(Booking(flightNumber, bookingNumber, URIO.never, true))).as(BookingCancellationResult.Done)
+    yield (booking, result)).commit.flatMap { (booking, result) =>
+      booking.cancelPotentialCancel *> UIO.succeed(result)
     }
 
   override def availableSeats(bookingNumber: BookingNumber): IO[BookingDoesNotExist, AvailableSeats] =
@@ -57,10 +57,10 @@ private class BookingsLive(
   ): ZIO[R, BookingDoesNotExist | E, A] =
     bookingsRef.get.commit.flatMap(_.get(bookingNumber).fold(ZIO.fail(BookingDoesNotExist(bookingNumber)))(f))
 
-  private def addBookingsRef(flightNumber: FlightNumber): USTM[BookingNumber] =
+  private def addNewBooking(flightNumber: FlightNumber): USTM[BookingNumber] =
     bookingsRef.modify { bookings =>
       val bookingNumber = bookings.nextKey
-      val potentialCancellation = replaceWithCancelled(flightNumber, bookingNumber).delay(BookingTimeLimit).fork
+      val potentialCancellation = cancelBooking(bookingNumber).delay(BookingTimeLimit).fork
       (bookingNumber, bookings.add(Booking(flightNumber, bookingNumber, potentialCancellation)))
     }
 
@@ -71,9 +71,6 @@ private class BookingsLive(
 
   private def updateBookingsRef(booking: Booking): USTM[Unit] =
     bookingsRef.update(_.updated(booking.bookingNumber, booking))
-
-  private def replaceWithCancelled(flightNumber: FlightNumber, bookingNumber: BookingNumber): UIO[Unit] =
-    updateBookingsRef(Booking(flightNumber, bookingNumber, URIO.never, true)).commit
 
 object BookingsLive:
   val layer: ULayer[Bookings] =

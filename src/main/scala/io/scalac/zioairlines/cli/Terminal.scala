@@ -65,10 +65,12 @@ object Terminal extends ZIOAppDefault:
           ZIO.succeed(selectedSeats)
         else
           val Array(passenger, seatStr) = entry.split(":")
-          loop(selectedSeats + SeatAssignment(passenger, Seat(seatStr)))
+          val seat = Seat(seatStr)
+          Console.printLine(s"Enter next `passenger:seat` ($Done if done)") *>
+            loop(selectedSeats + SeatAssignment(passenger, seat))
       }
 
-    Console.printLine(s"Enter `passenger:seat` ($Done when done) from available seats:\n" +
+    Console.printLine(s"Enter `passenger:seat` from available seats:\n" +
       availableSeats.mkString(",")) *> loop(Set())
 
   private def chooseOrdinal[X](name: String, xs: Iterable[X]) =
