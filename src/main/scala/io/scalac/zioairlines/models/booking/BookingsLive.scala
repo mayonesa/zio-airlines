@@ -7,10 +7,10 @@ import zioairlines.exceptions.*
 import zioairlines.models
 import models.flight.FlightNumber
 import models.seating.{AvailableSeats, SeatAssignment, SeatingArrangement}
+import BookingsLive.Expired
+
 import zio.*
 import zio.stm.{STM, TArray, TRef, USTM}
-
-val BookingTimeLimit = 5.minutes
 
 private class BookingsLive(
   bookingsRef: TRef[IncrementingKeyMap[Booking]],
@@ -23,10 +23,11 @@ private class BookingsLive(
 
   override def selectSeats(bookingNumber: BookingNumber, seats: Set[SeatAssignment]): IO[ZioAirlinesException, Unit] =
     (for
-      booking          <- get(bookingNumber)
-      bookingWithSeats <- booking.assignSeats(seats)
-      _                <- updateBookingsRef(bookingWithSeats)
-      _                <- seatArrangements.updateSTM(booking.flightNumber.ordinal, { seatArrangement =>
+      booking   <- get(bookingNumber)
+      withSeats <- STM.fromEither(booking.seatsAssigned(seats))
+      expired   <- updateBookingsRef(withSeats)
+      _         <- STM.cond(!expired, (), BookingTimeExpired)
+      _         <- seatArrangements.updateSTM(booking.flightNumber.ordinal, { seatArrangement =>
         STM.fromEither(seatArrangement.assignSeats(seats))
       })
     yield ()).commit
@@ -60,8 +61,7 @@ private class BookingsLive(
   private def addNewBooking(flightNumber: FlightNumber): USTM[BookingNumber] =
     bookingsRef.modify { bookings =>
       val bookingNumber = bookings.nextKey
-      val potentialCancellation = cancelBooking(bookingNumber).delay(BookingTimeLimit).fork
-      (bookingNumber, bookings.add(Booking(flightNumber, bookingNumber, potentialCancellation)))
+      (bookingNumber, bookings.add(Booking.start(flightNumber, bookingNumber)))
     }
 
   private def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist, Booking] =
@@ -69,10 +69,13 @@ private class BookingsLive(
       STM.fromEither(bookings.get(bookingNumber).toRight(BookingDoesNotExist(bookingNumber)))
     }
 
-  private def updateBookingsRef(booking: Booking): USTM[Unit] =
-    bookingsRef.update(_.updated(booking.bookingNumber, booking))
+  private def updateBookingsRef(booking: Booking): USTM[Expired] =
+    bookingsRef.update(_.updated(booking.bookingNumber, booking)) *>
+      STM.succeed(booking.status == BookingStatus.Expired)
 
 object BookingsLive:
+  private type Expired = Boolean
+
   val layer: ULayer[Bookings] =
     TRef.make(IncrementingKeyMap.empty[Booking]).flatMap { bookings =>
       TArray.fromIterable(FlightNumber.values.map { _ =>

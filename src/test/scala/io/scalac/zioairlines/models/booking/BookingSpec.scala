@@ -20,7 +20,7 @@ object BookingSpec extends DefaultRunnableSpec:
 
   def spec = suite("BookingSpec")(
     test("available seats should respect taken ones") {
-      Booking(FlightNumber.ZA10, 1, UIO.never).assignSeats(SeatAssignments).commit.map { booking =>
+      Booking(FlightNumber.ZA10, 1, UIO.never).seatsAssigned(SeatAssignments).commit.map { booking =>
         assertTrue(booking.seatAssignments == SeatAssignments)
       }
     }
