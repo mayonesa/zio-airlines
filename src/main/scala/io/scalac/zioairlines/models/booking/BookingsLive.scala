@@ -7,7 +7,6 @@ import zioairlines.exceptions.*
 import zioairlines.models
 import models.flight.FlightNumber
 import models.seating.{AvailableSeats, SeatAssignment, SeatingArrangement}
-import BookingsLive.Expired
 
 import zio.*
 import zio.stm.{STM, TArray, TRef, USTM}
@@ -75,8 +74,6 @@ private class BookingsLive(
   private def update(booking: Booking) = bookingsRef.update(_.updated(booking.bookingNumber, booking))
 
 object BookingsLive:
-  private type Expired = Boolean
-
   val layer: ULayer[Bookings] =
     TRef.make(IncrementingKeyMap.empty[Booking]).flatMap { bookings =>
       TArray.fromIterable(FlightNumber.values.map { _ =>
