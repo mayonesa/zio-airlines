@@ -9,7 +9,7 @@ import models.flight.FlightNumber
 import scala.concurrent.duration.*
 
 type BookingNumber = Int
-val BookingTimeLimit = 20.seconds
+val BookingTimeLimit = 5.minutes
 
 trait Booking:
   def flightNumber: FlightNumber
@@ -28,10 +28,9 @@ private case class BookingImpl(
   override val bookingNumber  : BookingNumber,
   override val status         : BookingStatus = BookingStatus.Started,
   override val seatAssignments: Set[SeatAssignment] = Set(),
-
-  // will cause status to not reflect in the case of expiration unless another action comes in between update and status
-  // look-up. However, there's no outside-package exposure at the moment.
-  bookingDeadline             : Deadline = BookingTimeLimit.fromNow,
+  bookingDeadline             : Deadline = BookingTimeLimit.fromNow, // will cause status staleness in the case of
+  // expiration unless another action comes in between update and status look-up. However, there's no outside-package
+  // exposure at the moment.
 ) extends Booking:
   override private[booking] def seatsAssigned(
     seatSelections: Set[SeatAssignment]

@@ -65,20 +65,20 @@ object BookingsSpec extends DefaultRunnableSpec:
         Bookings.selectSeats(2, SeatAssignments)).provideLayer(Live))(equalTo(()))
     },
     test("book") {
-      assertM((BeginBooking *> SelectSeats *> Book).provideCustomLayer(Live))(equalTo(()))
+      assertM((BeginBooking *> SelectSeats *> Book).provideLayer(Live))(equalTo(()))
     },
     test("selecting seats on booked booking") {
-      assertM((BeginBooking *> SelectSeats *> Book *> SelectSeats).provideCustomLayer(Live).exit)(
+      assertM((BeginBooking *> SelectSeats *> Book *> SelectSeats).provideLayer(Live).exit)(
         fails(equalTo(BookingStepOutOfOrder("You cannot add seats more than once to a booking")))
       )
     },
     test("cancel") {
-      assertM((BeginBooking *> SelectSeats *> Book *> Cancel).provideCustomLayer(Live))(
+      assertM((BeginBooking *> SelectSeats *> Book *> Cancel).provideLayer(Live))(
         equalTo(())
       )
     },
     test("selecting seats on canceled booking") {
-      assertM((BeginBooking *> SelectSeats *> Book *> Cancel *> SelectSeats).provideCustomLayer(Live).exit)(
+      assertM((BeginBooking *> SelectSeats *> Book *> Cancel *> SelectSeats).provideLayer(Live).exit)(
         fails(equalTo(BookingAlreadyCanceled))
       )
     },
@@ -87,6 +87,10 @@ object BookingsSpec extends DefaultRunnableSpec:
         fails(equalTo(BookingTimeExpired))
       )
     } @@ ignore, // TODO: need to mock `BookingImpl.bookingDeadline`
-    test("cancel when already canceled")(???) @@ ignore,
+    test("cancel when already canceled") {
+      assertM((BeginBooking *> Cancel *> Cancel).provideLayer(Live).exit)(
+        fails(equalTo(BookingAlreadyCanceled))
+      )
+    },
     test("cancel with expired booking-time")(???) @@ ignore,
   )
