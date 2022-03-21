@@ -13,7 +13,8 @@ import zio.stm.{STM, TArray, TRef, USTM}
 
 private class BookingsLive(
   bookingsRef: TRef[IncrementingKeyMap[Booking]],
-  seatArrangements: TArray[SeatingArrangement]
+  seatArrangements: TArray[SeatingArrangement],
+  newBooking: (FlightNumber, BookingNumber) => Booking,
 ) extends Bookings:
   override def beginBooking(flightNumber: FlightNumber): UIO[(BookingNumber, AvailableSeats)] =
     seatArrangements(flightNumber.ordinal).flatMap { seatArrangement =>
@@ -78,5 +79,5 @@ object BookingsLive:
     TRef.make(IncrementingKeyMap.empty[Booking]).flatMap { bookings =>
       TArray.fromIterable(FlightNumber.values.map { _ =>
         SeatingArrangement.empty
-      }).map(BookingsLive(bookings, _))
+      }).map(BookingsLive(bookings, _, BookingImpl.start))
     }.commit.toLayer[Bookings]
