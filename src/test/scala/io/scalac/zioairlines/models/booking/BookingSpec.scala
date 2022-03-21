@@ -4,11 +4,9 @@ import io.scalac.zioairlines.models
 import models.flight.FlightNumber
 import models.seating.{Seat, SeatAssignment, SeatLetter, SeatRow}
 
-import zio.*
-import zio.test.*
-import zio.test.Assertion.*
+import org.scalatest.flatspec.AnyFlatSpec
 
-object BookingSpec extends DefaultRunnableSpec:
+object BookingSpec extends AnyFlatSpec:
   private val FirstRow = SeatRow.`1`
   private val A = SeatLetter.A
   private val B = SeatLetter.B
@@ -18,10 +16,8 @@ object BookingSpec extends DefaultRunnableSpec:
   private val PepeSeat = SeatAssignment("pepe", `1A`)
   private val SeatAssignments = Set(PepeSeat, SeatAssignment("tito", `1B`))
 
-  def spec = suite("BookingSpec")(
-    test("available seats should respect taken ones") {
-      Booking(FlightNumber.ZA10, 1, UIO.never).seatsAssigned(SeatAssignments).commit.map { booking =>
-        assertTrue(booking.seatAssignments == SeatAssignments)
+  "Booking" should "respect taken seats when calculating available ones" in {
+      BookingImpl(FlightNumber.ZA10, 1).seatsAssigned(SeatAssignments).map { booking =>
+        assert(booking.seatAssignments == SeatAssignments)
       }
     }
-  )

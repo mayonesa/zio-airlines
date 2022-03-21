@@ -30,7 +30,7 @@ private case class BookingImpl(
   override val seatAssignments: Set[SeatAssignment] = Set(),
 
   // will cause status to not reflect in the case of expiration unless another action comes in between update and status
-  // look-up. However, there's no outside-package exposure at the time.
+  // look-up. However, there's no outside-package exposure at the moment.
   bookingDeadline             : Deadline = BookingTimeLimit.fromNow,
 ) extends Booking:
   override private[booking] def seatsAssigned(
