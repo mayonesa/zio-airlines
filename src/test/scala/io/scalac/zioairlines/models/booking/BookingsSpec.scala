@@ -27,7 +27,7 @@ object BookingsSpec extends DefaultRunnableSpec:
   private val Cancel = Bookings.cancelBooking(FirstBookingNumber)
   private val NAllSeats = SeatRow.values.length * SeatLetter.values.length
 
-  def spec = suite("Single-fiber BookingsSpec")(
+  private val singleFiber = suite("Single-fiber BookingsSpec")(
     test("book-start") {
       BeginBooking.provideLayer(Live).map { case (bookingNumber, availableSeats) =>
         assertTrue(availableSeats.size == NAllSeats, bookingNumber == FirstBookingNumber)
@@ -86,7 +86,7 @@ object BookingsSpec extends DefaultRunnableSpec:
       assertM((BeginBooking *> SelectSeats).provideLayer(Live).exit)(
         fails(equalTo(BookingTimeExpired))
       )
-    } @@ ignore, // TODO: need to mock `BookingImpl.bookingDeadline`
+    } @@ ignore,
     test("cancel when already canceled") {
       assertM((BeginBooking *> Cancel *> Cancel).provideLayer(Live).exit)(
         fails(equalTo(BookingAlreadyCanceled))
@@ -94,3 +94,13 @@ object BookingsSpec extends DefaultRunnableSpec:
     },
     test("cancel with expired booking-time")(???) @@ ignore,
   )
+
+  private val multiFiber = suite("multi-fiber booking spec")(
+    test("book-start") {
+      BeginBooking.provideLayer(Live).map { case (bookingNumber, availableSeats) =>
+        assertTrue(availableSeats.size == NAllSeats, bookingNumber == FirstBookingNumber)
+      }
+    } @@ ignore,
+  )
+
+  def spec = suite("BookingsSpec")(singleFiber, multiFiber)
