@@ -44,14 +44,18 @@ private class BookingsLive(
       seatArrangements(booking.flightNumber.ordinal).commit.map(_.availableSeats)
     }
 
-  private def withUpdatedAndExpiration[E](bookingNumber: BookingNumber)(
+  private def withUpdatedAndExpiration[E](
+    bookingNumber: BookingNumber
+  )(
     f: Booking => Either[E, Booking]
   ): STM[BookingTimeExpired.type | BookingDoesNotExist | E, Booking] =
     withUpdated(bookingNumber)(f).flatMap { updated =>
       STM.cond(updated.status != BookingStatus.Expired, updated, BookingTimeExpired)
     }
 
-  private def withUpdated[E](bookingNumber: BookingNumber)(
+  private def withUpdated[E](
+    bookingNumber: BookingNumber
+  )(
     f: Booking => Either[E, Booking]
   ): STM[BookingDoesNotExist | E, Booking] =
     for

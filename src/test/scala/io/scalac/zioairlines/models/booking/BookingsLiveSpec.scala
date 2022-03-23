@@ -4,6 +4,7 @@ import zio._
 import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect.ignore
+import org.scalactic.TripleEquals.convertToEqualizer
 
 import io.scalac.zioairlines
 import zioairlines.models
@@ -11,7 +12,7 @@ import models.seating.{Seat, SeatRow, SeatLetter, SeatAssignment}
 import models.flight.FlightNumber
 import zioairlines.exceptions.*
 
-object BookingsSpec extends DefaultRunnableSpec:
+object BookingsLiveSpec extends DefaultRunnableSpec:
   private val Live = BookingsLive.layer
   private val FirstRow = SeatRow.`1`
   private val A = SeatLetter.A
@@ -30,7 +31,7 @@ object BookingsSpec extends DefaultRunnableSpec:
   private val singleFiber = suite("Single-fiber BookingsSpec")(
     test("book-start") {
       BeginBooking.provideLayer(Live).map { case (bookingNumber, availableSeats) =>
-        assertTrue(availableSeats.size == NAllSeats, bookingNumber == FirstBookingNumber)
+        assertTrue(availableSeats.size === NAllSeats, bookingNumber === FirstBookingNumber)
       }
     },
     test("attempt to select seats w/o starting the booking") {
@@ -46,7 +47,7 @@ object BookingsSpec extends DefaultRunnableSpec:
     },
     test("pre-selected seats not available") {
       (BeginBooking *> SelectSeats *> BeginBooking).provideLayer(Live).map { case (bookingNumber, availableSeats) =>
-        assertTrue(bookingNumber == 2, !availableSeats(`1A`), !availableSeats(`1B`))
+        assertTrue(bookingNumber === 2, !availableSeats(`1A`), !availableSeats(`1B`))
       }
     },
     test("none of the seats available") {
@@ -97,10 +98,12 @@ object BookingsSpec extends DefaultRunnableSpec:
 
   private val multiFiber = suite("multi-fiber booking spec")(
     test("book-start") {
-      BeginBooking.provideLayer(Live).map { case (bookingNumber, availableSeats) =>
-        assertTrue(availableSeats.size == NAllSeats, bookingNumber == FirstBookingNumber)
+      URIO.foreachPar(1 to 100) { _ =>
+        BeginBooking
+      }.provideLayer(Live).map { begins =>
+        assertTrue(begins.forall(_._2.size === NAllSeats))
       }
-    } @@ ignore,
+    },
   )
 
   def spec = suite("BookingsSpec")(singleFiber, multiFiber)
