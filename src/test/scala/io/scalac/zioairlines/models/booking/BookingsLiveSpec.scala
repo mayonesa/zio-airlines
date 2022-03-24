@@ -59,7 +59,7 @@ object BookingsLiveSpec extends DefaultRunnableSpec:
     test("some of the seats not available") {
       assertM((BeginBooking *> SelectSeats *> BeginBooking *>
         Bookings.selectSeats(2, Set(PepeSeat))).provideLayer(Live).exit)(
-        fails(equalTo(SeatsNotAvailable(NonEmptyChunk(`1A`)))
+          fails(equalTo(SeatsNotAvailable(NonEmptyChunk(`1A`)))
         )
       )
     },
