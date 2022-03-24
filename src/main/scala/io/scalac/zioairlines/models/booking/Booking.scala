@@ -22,15 +22,14 @@ trait Booking:
   ): Either[BookingAlreadyCanceled.type | BookingStepOutOfOrder | NoSeatsSelected.type, Booking]
   private[booking] def book: Either[BookingAlreadyCanceled.type | BookingStepOutOfOrder, Booking]
   private[booking] def cancel: Either[BookingAlreadyCanceled.type , Booking]
+  private[booking] def checkExpired: Option[Booking]
 
 private[booking] case class BookingImpl(
   override val flightNumber   : FlightNumber,
   override val bookingNumber  : BookingNumber,
   override val status         : BookingStatus = BookingStatus.Started,
   override val seatAssignments: Set[SeatAssignment] = Set(),
-  private val bookingDeadline : Deadline = BookingTimeLimit.fromNow, // will cause status staleness in the case of
-  // expiration unless another action comes in between update and status look-up. However, there's no outside-package
-  // exposure at the moment.
+  private val bookingDeadline : Deadline = BookingTimeLimit.fromNow
 ) extends Booking:
   override private[booking] def seatsAssigned(
     seatSelections: Set[SeatAssignment]
@@ -61,6 +60,14 @@ private[booking] case class BookingImpl(
       Left(BookingAlreadyCanceled)
     else
       Right(copy(status = BookingStatus.Canceled, seatAssignments = Set()))
+
+  override private[booking] def checkExpired: Option[Booking] =
+    if (status == BookingStatus.SeatsSelected || status == BookingStatus.Started) && status != BookingStatus.Expired
+      && bookingDeadline.isOverdue()
+    then
+      Some(copy(status = BookingStatus.Expired, seatAssignments = Set()))
+    else
+      None
 
 private[booking] object BookingImpl:
   private[booking] def start(flightNumber: FlightNumber, bookingNumber: BookingNumber): Booking =

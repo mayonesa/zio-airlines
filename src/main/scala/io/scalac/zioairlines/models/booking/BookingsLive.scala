@@ -43,7 +43,11 @@ private class BookingsLive(
     seatArrangements(flightNumber.ordinal).commit.map(_.availableSeats)
 
   override def getBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, Booking] =
-    get(bookingNumber).commit
+    get(bookingNumber).flatMap { booking =>
+      booking.checkExpired.fold(STM.succeed(booking)) { expired =>
+        update(expired) *> STM.succeed(expired)
+      }
+    }.commit
 
   private def withUpdatedAndExpiration[E](
     bookingNumber: BookingNumber
@@ -71,7 +75,7 @@ private class BookingsLive(
       (bookingNumber, bookings.add(BookingImpl.start(flightNumber, bookingNumber)))
     }
 
-  private def get(bookingNumber: BookingNumber): STM[BookingDoesNotExist, Booking] =
+  private def get(bookingNumber: BookingNumber) =
     bookingsRef.get.flatMap { bookings =>
       STM.fromEither(bookings.get(bookingNumber).toRight(BookingDoesNotExist(bookingNumber)))
     }
