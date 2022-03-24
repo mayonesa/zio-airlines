@@ -62,9 +62,7 @@ private[booking] case class BookingImpl(
       Right(copy(status = BookingStatus.Canceled, seatAssignments = Set()))
 
   override private[booking] def checkExpired: Option[Booking] =
-    if (status == BookingStatus.SeatsSelected || status == BookingStatus.Started) && status != BookingStatus.Expired
-      && bookingDeadline.isOverdue()
-    then
+    if (status == BookingStatus.SeatsSelected || status == BookingStatus.Started) && bookingDeadline.isOverdue() then
       Some(copy(status = BookingStatus.Expired, seatAssignments = Set()))
     else
       None
