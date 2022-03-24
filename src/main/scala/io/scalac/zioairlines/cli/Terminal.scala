@@ -38,7 +38,8 @@ object Terminal extends ZIOAppDefault:
   private val selectSeats = for
     bookingNumberStr <- Console.printLine("Enter booking number") *> Console.readLine
     bookingNumber    =  bookingNumberStr.toInt
-    availableSeats   <- Bookings.availableSeats(bookingNumber)
+    booking          <- Bookings.getBooking(bookingNumber)
+    availableSeats   <- Bookings.availableSeats(booking.flightNumber)
     seatsChosen      <- getSelectedSeats(availableSeats)
     _                <- Bookings.selectSeats(bookingNumber, seatsChosen)
   yield ()

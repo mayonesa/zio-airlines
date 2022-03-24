@@ -3,7 +3,7 @@ package io.scalac.zioairlines.models.booking
 import zio._
 import zio.test._
 import zio.test.Assertion._
-import zio.test.TestAspect.ignore
+import zio.test.TestAspect.*
 import org.scalactic.TripleEquals.convertToEqualizer
 
 import io.scalac.zioairlines
@@ -26,7 +26,9 @@ object BookingsLiveSpec extends DefaultRunnableSpec:
   private val SelectSeats = Bookings.selectSeats(FirstBookingNumber, SeatAssignments)
   private val Book = Bookings.book(FirstBookingNumber)
   private val Cancel = Bookings.cancelBooking(FirstBookingNumber)
-  private val NAllSeats = SeatRow.values.length * SeatLetter.values.length
+  private val NRows: Int = SeatRow.values.length
+  private val SeatsPerRow: Int = SeatLetter.values.length
+  private val NAllSeats = NRows * SeatsPerRow
 
   private val singleFiber = suite("Single-fiber BookingsSpec")(
     test("book-start") {
@@ -97,13 +99,62 @@ object BookingsLiveSpec extends DefaultRunnableSpec:
   )
 
   private val multiFiber = suite("multi-fiber booking spec")(
-    test("book-start") {
+    test("multi book-start") {
       URIO.foreachPar(1 to 100) { _ =>
         BeginBooking
       }.provideLayer(Live).map { begins =>
         assertTrue(begins.forall(_._2.size === NAllSeats))
       }
     },
+    test("select seats in parallel") {
+      val selectSeats = withAllSeats(_ => ZIO.unit)
+      selectSeats.flatMap(ZIO.forall(_) { case (bookingNumber, assignedSeats) =>
+        Bookings.getBooking(bookingNumber).map { booking =>
+          booking.seatAssignments === assignedSeats && booking.bookingNumber === bookingNumber &&
+            booking.status === BookingStatus.SeatsSelected
+        }
+      }).provideLayer(Live).map(assertTrue(_))
+    } @@ flaky(100),
+    test("book in parallel") {
+      val selectSeats = withAllSeats(Bookings.book)
+      selectSeats.flatMap(ZIO.forall(_) { case (bookingNumber, assignedSeats) =>
+        Bookings.getBooking(bookingNumber).map { booking =>
+          booking.seatAssignments === assignedSeats && booking.bookingNumber === bookingNumber &&
+            booking.status === BookingStatus.Booked
+        }
+      }).provideLayer(Live).map(assertTrue(_))
+    } @@ flaky(100),
+    test("cancel in parallel") {
+      val canceleds = withAllSeats(Bookings.cancelBooking)
+      canceleds.flatMap(ZIO.forall(_) { case (bookingNumber, assignedSeats) =>
+        Bookings.getBooking(bookingNumber).map { booking =>
+          booking.seatAssignments.isEmpty && booking.bookingNumber === bookingNumber &&
+            booking.status === BookingStatus.Canceled
+        }
+      }).provideLayer(Live).map(assertTrue(_))
+    } @@ flaky(100),
   )
+
+  private def withAllSeats[R, E](afterSeatSelection: BookingNumber => ZIO[R, E, Unit]) =
+    ZIO.foreachPar(1 to 20) { i =>
+      for
+        began <- BeginBooking
+        (bookingNumber, _) = began
+        doubleI = 2 * i
+        j = doubleI - 1
+        seatRow = SeatRow.fromOrdinal((j - 1) / SeatsPerRow)
+        seatLetterOrdinal1 = seatOrdinal(j)
+        seatLetter1 = SeatLetter.fromOrdinal(seatLetterOrdinal1)
+        seatLetterOrdinal2 = seatOrdinal(doubleI)
+        seatLetter2 = SeatLetter.fromOrdinal(seatLetterOrdinal2)
+        seat1 = SeatAssignment("passenger" + i, Seat(seatRow, seatLetter1))
+        seat2 = SeatAssignment("passenger" + (i + 1), Seat(seatRow, seatLetter2))
+        assignedSeats = Set(seat1, seat2)
+        _ <- Bookings.selectSeats(bookingNumber, assignedSeats)
+        _ <- afterSeatSelection(bookingNumber)
+      yield (bookingNumber, assignedSeats)
+    }
+
+  private def seatOrdinal(i1: Int) = (i1 - 1) % SeatsPerRow
 
   def spec = suite("BookingsSpec")(singleFiber, multiFiber)

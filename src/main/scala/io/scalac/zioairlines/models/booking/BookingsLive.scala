@@ -39,10 +39,11 @@ private class BookingsLive(
       seatArrangements.update(canceled.flightNumber.ordinal, _.releaseSeats(canceled.seatAssignments))
     }: STM[BookingDoesNotExist | BookingAlreadyCanceled.type, Unit]).commit
 
-  override def availableSeats(bookingNumber: BookingNumber): IO[BookingDoesNotExist, AvailableSeats] =
-    get(bookingNumber).commit.flatMap { booking =>
-      seatArrangements(booking.flightNumber.ordinal).commit.map(_.availableSeats)
-    }
+  override def availableSeats(flightNumber: FlightNumber): UIO[AvailableSeats] =
+    seatArrangements(flightNumber.ordinal).commit.map(_.availableSeats)
+
+  override def getBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, Booking] =
+    get(bookingNumber).commit
 
   private def withUpdatedAndExpiration[E](
     bookingNumber: BookingNumber
