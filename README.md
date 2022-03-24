@@ -37,6 +37,32 @@ and `availableSeats`
   - `POST: /zio-airlines/bookings/{booking_number}/select-seats/` - posts anonymous JSON array of selected seats
   - `POST: /zio-airlines/bookings/{booking_number}/book/` - books flight
   - `POST: /zio-airlines/bookings/{booking_number}/cancel/` - cancels booking
+  - `GET: /zio-airlines/booking/{booking_number}/` - returns booking:
+  ```javascript
+  {
+    "flightNumber": "string",
+    "bookingNumber: "integer",
+    "status: ["Started", "SeatsSelected", "Booked", "Expired", "Canceled"],
+    "seatAssignments": [
+      {
+        "passengerName": "string",
+        "seat": {
+          "row": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+          "letter": ["A", "B", "C", "D"]
+        }
+      }
+    ]
+  }
+  ```
+  - `GET: /zio-airlines/flights/{flight_number}/available-seats` - returns available seats:
+  ```javascript
+  [
+    {
+      "row": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+      "letter": ["A", "B", "C", "D"]
+    }
+  ]
+  ```
 
 ### Part 3: Flight (Under construction)
 The year is 2027. ZIO Airlines only serves markets it has exclusive rights to and has also embraced an adhoc flight-
