@@ -64,7 +64,10 @@ and `availableSeats`
   ]
   ```
 
-### Part 3: Flight (Under construction)
+### Part 3: Persist
+- Use ZIO SQL or Quill to persist bookings/flights
+
+### Part 4: Flight (Under construction)
 The year is 2027. ZIO Airlines only serves markets it has exclusive rights to and has also embraced an adhoc flight-
 operations model. Therefore, 
 - Once a flight is full and a plane is ready, the flight will be queued up for departure. Additionally,
@@ -72,7 +75,7 @@ operations model. Therefore,
 - All the airports are single-runway.
 - Each runway-use (i.e., landing or take-off) takes 1 minute.
 - As a safety measure, there must be at least a 2-minute gap between runway-uses.
-- The airports (coordinates provided in .conf) are:
+- The airports (coordinates provided in .conf (use ZIO Conf)) are:
   - GDN
   - SFO
   - GRU
@@ -80,8 +83,9 @@ operations model. Therefore,
   - SVO
   - MEX
 - Airplanes have an average speed of 1000 Km/h regardless of distance.
+- ZIO Logging
 
-### Part 4: Emergency! (Under construction)
+### Part 5: Emergency! (Under construction)
 Unfortunately, emergencies are part and parcel of this industry and ZIO Airlines is no exception but, at the 
 prodding of the associated government-powers-that-be, some mitigating procedures have been put in place:
 - Every airplane of its fleet must send ZIO Central an "I'm-flying" signal (only when it actually is) every 10 seconds 
