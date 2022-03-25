@@ -96,7 +96,14 @@ object BookingsLiveSpec extends DefaultRunnableSpec:
       )
     },
     test("cancel with expired booking-time")(???) @@ ignore,
-    test("get-booking not expired")(???) @@ ignore,
+    test("get-booking not expired") {
+      (for
+        beganResult        <- BeginBooking
+        (bookingNumber, _) =  beganResult
+        booking            <- Bookings.getBooking(bookingNumber)
+      yield assertTrue(booking.bookingNumber === bookingNumber, booking.status === BookingStatus.Started,
+        booking.seatAssignments.isEmpty)).provideLayer(Live)
+    },
     test("get-booking stale expiration")(???) @@ ignore,
     test("get-booking synchronized expiration")(???) @@ ignore,
   )
