@@ -22,7 +22,7 @@ trait Booking:
   ): Either[BookingAlreadyCanceled.type | BookingStepOutOfOrder | NoSeatsSelected.type, Booking]
   private[booking] def book: Either[BookingAlreadyCanceled.type | BookingStepOutOfOrder, Booking]
   private[booking] def cancel: Either[BookingAlreadyCanceled.type , Booking]
-  private[booking] def checkExpired: Option[Booking]
+  private[booking] def ifStaleExpiration: Option[Booking]
 
 private[booking] case class BookingImpl(
   override val flightNumber   : FlightNumber,
@@ -61,7 +61,7 @@ private[booking] case class BookingImpl(
     else
       Right(copy(status = BookingStatus.Canceled, seatAssignments = Set()))
 
-  override private[booking] def checkExpired: Option[Booking] =
+  override private[booking] def ifStaleExpiration: Option[Booking] =
     if (status == BookingStatus.SeatsSelected || status == BookingStatus.Started) && bookingDeadline.isOverdue() then
       Some(copy(status = BookingStatus.Expired, seatAssignments = Set()))
     else

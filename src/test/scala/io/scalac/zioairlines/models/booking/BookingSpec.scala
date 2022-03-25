@@ -49,6 +49,18 @@ class BookingSpec extends AnyFlatSpec with MockitoSugar:
       assert(booking.status === BookingStatus.Canceled)
     }
   }
-  "Get-booking" should "get-booking not expired" in fail("not implemented yet")
-  it should "get-booking stale expiration" in fail("not implemented yet")
-  it should "get-booking synchronized expiration" in fail("not implemented yet")
+  "Stale-expiration check" should "*not* get booking when not expired" in {
+    assert(BookingImpl(flight, 1).ifStaleExpiration.isEmpty)
+  }
+  it should "get booking when expired and seats selected" in getBooking(BookingStatus.SeatsSelected)
+  it should "get booking when expired and booking began" in  getBooking(BookingStatus.Started)
+  it should "get *not* get booking when expiration is synchronized" in {
+    assert(BookingImpl(flight, 1, BookingStatus.Expired).ifStaleExpiration.isEmpty)
+  }
+
+  private def getBooking(initialStatus: BookingStatus) =
+    val bookingDeadline = mock[Deadline]
+    when(bookingDeadline.isOverdue()).thenReturn(true)
+    val expired = BookingImpl(flight, 1, initialStatus, seatAssignments, bookingDeadline).ifStaleExpiration.get
+    assert(expired.status === BookingStatus.Expired)
+    assert(expired.seatAssignments.isEmpty)

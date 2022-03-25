@@ -44,7 +44,7 @@ private class BookingsLive(
 
   override def getBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, Booking] =
     get(bookingNumber).flatMap { booking =>
-      booking.checkExpired.fold(STM.succeed(booking)) { expired =>
+      booking.ifStaleExpiration.fold(STM.succeed(booking)) { expired =>
         update(expired) *> STM.succeed(expired)
       }
     }.commit
