@@ -96,6 +96,9 @@ object BookingsLiveSpec extends DefaultRunnableSpec:
       )
     },
     test("cancel with expired booking-time")(???) @@ ignore,
+    test("get-booking not expired")(???) @@ ignore,
+    test("get-booking stale expiration")(???) @@ ignore,
+    test("get-booking synchronized expiration")(???) @@ ignore,
   )
 
   private val multiFiber = suite("multi-fiber booking spec")(

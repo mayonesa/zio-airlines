@@ -49,3 +49,6 @@ class BookingSpec extends AnyFlatSpec with MockitoSugar:
       assert(booking.status === BookingStatus.Canceled)
     }
   }
+  "Get-booking" should "get-booking not expired" in fail("not implemented yet")
+  it should "get-booking stale expiration" in fail("not implemented yet")
+  it should "get-booking synchronized expiration" in fail("not implemented yet")
