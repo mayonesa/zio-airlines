@@ -28,16 +28,16 @@ invalidated and the seats therein become eligible for booking by any user.
 the booking process (i.e., flight selection, seat selection, and confirmation).
 
 ### Part 2: Put it to REST
-- Use ZIO-HTTP to make the application RESTful (For the adventurous type, there's a [DSL under development](https://github.com/kitlangton/zio-app) 
-that may make ZIO-HTTP more palatable)
+- Use ZIO-HTTP (and ZIO-JSON) to make the application RESTful (For the adventurous type, there's a 
+[DSL under development](https://github.com/kitlangton/zio-app) that may make ZIO-HTTP more palatable)
 - Endpoint API:
-  - `GET: /zio-airlines/flights/` - returns an anonymous JSON array of all flight numbers
-  - `POST: /zio-airlines/flights/{flight_number}/bookings/start/` - starts booking process and returns `bookingNumber`
+  - `GET: /flights/` - returns an anonymous JSON array of all flight numbers
+  - `POST: /flights/{flight_number}/bookings/start/` - starts booking process and returns `bookingNumber`
 and `availableSeats`  
-  - `POST: /zio-airlines/bookings/{booking_number}/select-seats/` - posts anonymous JSON array of selected seats
-  - `POST: /zio-airlines/bookings/{booking_number}/book/` - books flight
-  - `POST: /zio-airlines/bookings/{booking_number}/cancel/` - cancels booking
-  - `GET: /zio-airlines/booking/{booking_number}/` - returns booking:
+  - `POST: /bookings/{booking_number}/select-seats/` - posts anonymous JSON array of selected seats
+  - `POST: /bookings/{booking_number}/book/` - books flight
+  - `POST: /bookings/{booking_number}/cancel/` - cancels booking
+  - `GET: /booking/{booking_number}/` - returns booking:
   ```javascript
   {
     "flightNumber": "string",
