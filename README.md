@@ -1,5 +1,5 @@
 # ZIO Airlines
-It's the only way to fly.
+Come fly the friendly skies.
 
 ## Objective
 Meant to help start out with ZIO. Build an application that will handle airline bookings and subsequent flights. Will be 
