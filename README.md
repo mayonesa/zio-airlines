@@ -7,10 +7,16 @@ limited to subset of features of a full-fledged application (or a realistic sim)
 as an aid in learning some of the more salient aspects of ZIO.
 
 ## General rules
-- Use ZIO
-- Submission: open across-fork PR with branch name specifying which part is being submitted (e.g., flight).
-- Help: Zionomicon (Slack: #zionomicon) is the ideal companion for this project.
-
+- Use [ZIO](zio.dev)
+- Submission: clone this repo and set your remote to your personal, _private_ repo. Once ready for evaluation, please
+add @zio-airlines as a collaborator
+- Help: 
+  - The Zionomicon (Slack: #zionomicon) book is the ideal companion for this workshop.
+  - [zio.dev](https://zio.dev/next/overview/) is a helpful resource/tutorial.
+  - The following [Scalac](scalac.io) blog posts are helpful:
+    1. [Introduction to programming with ZIO functional effects](https://scalac.io/blog/introduction-to-programming-with-zio-functional-effects/)
+    2. [How to write a (completely lock-free) concurrent LRU Cache with ZIO STM](https://scalac.io/blog/how-to-write-a-completely-lock-free-concurrent-lru-cache-with-zio-stm/)
+  
 ### Part 1: Booking
 - One flight per booking (1 or more seats).
 - There are 40 seats per airplane.
@@ -26,6 +32,8 @@ invalidated and the seats therein become eligible for booking by any user.
 - A booking can be cancelled at any time before the actual flight (reservation number is the only required parameter).
 - Ensure integrity in a concurrent-booking context but a whole flight should not be "locked" throughout the entirety of
 the booking process (i.e., flight selection, seat selection, and confirmation).
+- Persistence is addressed in part 3 below. For training purposes, part 1 requires that *no* persistence provisions be 
+made, however.
 
 ### Part 2: Put it to REST
 - Use ZIO-HTTP (and ZIO-JSON) to make the application RESTful (For the adventurous type, there's a 
