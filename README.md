@@ -21,7 +21,8 @@ add @zio-airlines as a collaborator
 - One flight per booking (1 or more seats).
 - There are 40 seats per airplane.
 - Booking will consist of the following stages: 
-  1. **flight selection**
+  1. **flight selection**: flights are captured in `io.scalac.zioairlines.models.flight.FlightNumber` as a convenience
+but can be implemented or even specified differently at the discretion of the developer.
   2. **seat selection/assignment** from available seats (since client code may not be able to guarantee that the seat 
 selections input is not stale, there is the possibility that a subset of the seats have been 
 occupied by another client. In said case, the error channel should wholly indicate which of the seats are no longer 
