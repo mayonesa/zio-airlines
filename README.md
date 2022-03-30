@@ -7,13 +7,13 @@ limited to subset of features of a full-fledged application (or a realistic sim)
 as an aid in learning some of the more salient aspects of ZIO.
 
 ## General rules
-- Use [ZIO](zio.dev)
+- Use [ZIO](https://zio.dev)
 - Submission: clone this repo and set your remote to your personal, _private_ repo. Once ready for evaluation, please
 add @zio-airlines as a collaborator
 - Help: 
   - The Zionomicon (Slack: #zionomicon) book is the ideal companion for this workshop.
   - [zio.dev](https://zio.dev/next/overview/) is a helpful resource/tutorial.
-  - The following [Scalac](scalac.io) blog posts are helpful:
+  - The following [Scalac](https://scalac.io) blog posts are helpful:
     1. [Introduction to programming with ZIO functional effects](https://scalac.io/blog/introduction-to-programming-with-zio-functional-effects/)
     2. [How to write a (completely lock-free) concurrent LRU Cache with ZIO STM](https://scalac.io/blog/how-to-write-a-completely-lock-free-concurrent-lru-cache-with-zio-stm/)
   
