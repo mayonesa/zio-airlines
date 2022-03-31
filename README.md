@@ -12,7 +12,7 @@ as an aid in learning some of the more salient aspects of ZIO.
 add @zio-airlines as a collaborator
 - Help: 
   - The Zionomicon (Slack: #zionomicon) book is the ideal companion for this workshop. Particularly, chapters 2-4, 6-14,
-  20-21, 34-37, and, perhaps, 26 for pt. 4 and 5.
+  20-21, 34-37, and, perhaps, 26 for pt. 4 and 5 could be considered essential.
   - [zio.dev](https://zio.dev/next/overview/) is a helpful resource/tutorial.
   - The following [Scalac](https://scalac.io) blog posts are helpful:
     1. [Introduction to programming with ZIO functional effects](https://scalac.io/blog/introduction-to-programming-with-zio-functional-effects/)
