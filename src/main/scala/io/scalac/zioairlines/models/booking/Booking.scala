@@ -23,6 +23,7 @@ trait Booking:
   private[booking] def book: Either[BookingAlreadyCanceled.type | BookingStepOutOfOrder, Booking]
   private[booking] def cancel: Either[BookingAlreadyCanceled.type , Booking]
   private[booking] def ifStaleExpiration: Option[Booking]
+end Booking
 
 private[booking] case class BookingImpl(
   override val flightNumber   : FlightNumber,
@@ -66,6 +67,7 @@ private[booking] case class BookingImpl(
       Some(copy(status = BookingStatus.Expired, seatAssignments = Set()))
     else
       None
+end BookingImpl
 
 private[booking] object BookingImpl:
   private[booking] def start(flightNumber: FlightNumber, bookingNumber: BookingNumber): Booking =

@@ -81,6 +81,7 @@ private class BookingsLive(
     }
 
   private def update(booking: Booking) = bookingsRef.update(_.updated(booking.bookingNumber, booking))
+end BookingsLive
 
 object BookingsLive:
   val layer: ULayer[Bookings] =

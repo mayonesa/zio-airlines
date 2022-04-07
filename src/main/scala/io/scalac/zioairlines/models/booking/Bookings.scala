@@ -26,6 +26,7 @@ trait Bookings:
   def availableSeats(flightNumber: FlightNumber): UIO[AvailableSeats]
 
   def getBooking(bookingNumber: BookingNumber): IO[BookingDoesNotExist, Booking]
+end Bookings
 
 object Bookings:
   def beginBooking(flightNumber: FlightNumber): URIO[Bookings, (BookingNumber, AvailableSeats)] =
@@ -52,3 +53,4 @@ object Bookings:
 
   def getBooking(bookingNumber: BookingNumber): ZIO[Bookings, BookingDoesNotExist, Booking] =
     ZIO.serviceWithZIO[Bookings](_.getBooking(bookingNumber))
+end Bookings
