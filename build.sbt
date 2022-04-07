@@ -1,4 +1,4 @@
-val ZIOVersion        = "2.0.0-RC2"
+val ZIOVersion        = "2.0.0-RC3"
 
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
