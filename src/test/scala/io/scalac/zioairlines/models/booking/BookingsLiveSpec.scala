@@ -1,8 +1,8 @@
 package io.scalac.zioairlines.models.booking
 
-import zio._
-import zio.test._
-import zio.test.Assertion._
+import zio.*
+import zio.test.*
+import zio.test.Assertion.*
 import zio.test.TestAspect.*
 import org.scalactic.TripleEquals.convertToEqualizer
 
