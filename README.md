@@ -10,9 +10,12 @@ as an aid in learning some of the more salient aspects of ZIO.
 - Use [ZIO](https://zio.dev)
 - Submission: clone this repo and set your remote to your personal, _private_ repo. Once ready for evaluation, please
 add @zio-airlines as a collaborator
+- a `build.sbt` is included with library versions specified. They were chosen as the latest w/ no known significant
+issues. However, you're welcome to choose which versions you prefer. 
 - Help: 
   - The Zionomicon (Slack: #zionomicon) book is the ideal companion for this workshop. Particularly, chapters 2-4, 6-14,
-  20-21, 34-37, and, perhaps, 26 for pt. 4 and 5 could be considered essential.
+  20-21, 34-37, and, perhaps, 26 for pt. 4 and 5 could be considered essential. Also, while this book covers ZIO 2, ZIO
+  2 has changed considerably (e.g., no more `HAS`, `ZManaged`) since the current edition was written.
   - [zio.dev](https://zio.dev/next/overview/) is a helpful resource/tutorial.
   - The following [Scalac](https://scalac.io) blog posts are helpful:
     1. [Introduction to programming with ZIO functional effects](https://scalac.io/blog/introduction-to-programming-with-zio-functional-effects/)
