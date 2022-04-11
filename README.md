@@ -11,7 +11,7 @@ as an aid in learning some of the more salient aspects of ZIO.
 - Submission: clone this repo and set your remote to your personal, _private_ repo. Once ready for evaluation, please
 add @zio-airlines as a collaborator
 - a `build.sbt` is included with library versions specified. They were chosen as the latest w/ no known significant
-issues. However, you're welcome to choose which versions you prefer. 
+issues. However, you're welcome to choose whichever versions you prefer. 
 - Help: 
   - The Zionomicon (Slack: #zionomicon) book is the ideal companion for this workshop. Particularly, chapters 2-4, 6-14,
   20-21, 34-37, and, perhaps, 26 for pt. 4 and 5 could be considered essential. Also, while this book covers ZIO 2, ZIO

@@ -115,7 +115,7 @@ object BookingsLiveSpec extends DefaultRunnableSpec:
       }.provideLayer(Live).map { begins =>
         assertTrue(begins.forall(_._2.size === NAllSeats))
       }
-    },
+    } @@ nonFlaky(100),
     test("select seats in parallel") {
       val selectSeats = withAllSeats(_ => ZIO.unit)
       selectSeats.flatMap(ZIO.forall(_) { case (bookingNumber, assignedSeats) =>
@@ -133,7 +133,7 @@ object BookingsLiveSpec extends DefaultRunnableSpec:
             booking.status === BookingStatus.Booked
         }
       }).provideLayer(Live).map(assertTrue(_))
-    } @@ flaky(100),
+    } @@ nonFlaky(100),
     test("cancel in parallel") {
       val canceleds = withAllSeats(Bookings.cancelBooking)
       canceleds.flatMap(ZIO.forall(_) { case (bookingNumber, assignedSeats) =>
@@ -142,7 +142,7 @@ object BookingsLiveSpec extends DefaultRunnableSpec:
             booking.status === BookingStatus.Canceled
         }
       }).provideLayer(Live).map(assertTrue(_))
-    } @@ flaky(100),
+    } @@ nonFlaky(100),
   )
 
   private def withAllSeats[R, E](afterSeatSelection: BookingNumber => ZIO[R, E, Unit]) =
