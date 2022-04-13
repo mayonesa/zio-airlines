@@ -56,7 +56,7 @@ object Terminal extends ZIOAppDefault:
       //      case Book        => book *> nextAction
       //      case Cancel      => cancel *> nextAction
     }
-    Console.printLine("ZIO Airlines... it's the only way to fly.") *> nextAction.provideCustomLayer(BookingsLive.layer)
+    Console.printLine("ZIO Airlines... come fly the friendly skies.") *> nextAction.provideCustomLayer(BookingsLive.layer)
   }
 
   private def getSelectedSeats(availableSeats: AvailableSeats) =
