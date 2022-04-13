@@ -91,7 +91,7 @@ operations model. Therefore,
 - The airports (coordinates provided in .conf (use ZIO Conf)) are:
   - GDN
   - SFO
-  - GRU
+  - IEV
   - MAD
   - SVO
   - MEX
