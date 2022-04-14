@@ -41,7 +41,8 @@ the booking process (i.e., flight selection, seat selection, and confirmation).
 made, however.
 
 ### Part 2: Put it to REST
-- Use ZIO-HTTP (and ZIO-JSON) to make the application RESTful (For the adventurous type, there's a 
+- Use [ZIO-HTTP](https://dream11.github.io/zio-http/) (and most likely [ZIO-JSON](https://zio.github.io/zio-json/)) to 
+make the application RESTful (For the adventurous type, there's a 
 [DSL under development](https://github.com/kitlangton/zio-app) that may make ZIO-HTTP more palatable)
 - Endpoint API:
   - `GET: /flights/` - returns an anonymous JSON array of all flight numbers
@@ -78,7 +79,7 @@ and `availableSeats`
   ```
 
 ### Part 3: Persist
-- Use ZIO SQL or Quill to persist bookings/flights
+- Use [ZIO SQL](https://zio.github.io/zio-sql/) or [Quill](https://getquill.io/) to persist bookings/flights
 
 ### Part 4: Flight (Under construction)
 The year is 2027. ZIO Airlines only serves markets it has exclusive rights to and has also embraced an adhoc flight-
@@ -88,7 +89,7 @@ operations model. Therefore,
 - All the airports are single-runway.
 - Each runway-use (i.e., landing or take-off) takes 1 minute.
 - As a safety measure, there must be at least a 2-minute gap between runway-uses.
-- The airports (coordinates provided in .conf (use ZIO Conf)) are:
+- The airports (coordinates provided in .conf (use [ZIO Config](https://zio.github.io/zio-config/))) are:
   - GDN
   - SFO
   - IEV
@@ -96,7 +97,7 @@ operations model. Therefore,
   - SVO
   - MEX
 - Airplanes have an average speed of 1000 Km/h regardless of distance.
-- ZIO Logging
+- [ZIO Logging](https://zio.github.io/zio-logging/) for queueing, departure, landing.
 
 ### Part 5: Emergency! (Under construction)
 Unfortunately, emergencies are part and parcel of this industry and ZIO Airlines is no exception but, at the 
