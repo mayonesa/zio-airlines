@@ -35,6 +35,7 @@ available)
 - Once started, a booking will have 5 minutes for completion. If not completed within said time, booking will be 
 invalidated and the seats therein become eligible for booking by any user.
 - A booking can be cancelled at any time before the actual flight (reservation number is the only required parameter).
+Yes, flights in part 1 don't have an actual departure time. Therefore, cancellation for this part can be at any time.
 - Ensure integrity in a concurrent-booking context but a whole flight should not be "locked" throughout the entirety of
 the booking process (i.e., flight selection, seat selection, and confirmation).
 - Persistence is addressed in part 3 below. For training purposes, part 1 requires that *no* persistence provisions be 
