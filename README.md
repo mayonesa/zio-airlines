@@ -40,6 +40,8 @@ Yes, flights in part 1 don't have an actual departure time. Therefore, cancellat
 the booking process (i.e., flight selection, seat selection, and confirmation).
 - Persistence is addressed in part 3 below. For training purposes, part 1 requires that *no* persistence provisions be 
 made, however.
+- You may notice that no client or UI is specified. For part 1, the only client required is 
+[ZIO Test](https://zio.dev/next/datatypes/test/). Please, make sure to test for concurrency correctness.
 
 ### Part 2: Put it to REST
 - Use [ZIO-HTTP](https://dream11.github.io/zio-http/) (and most likely [ZIO-JSON](https://zio.github.io/zio-json/)) to 
